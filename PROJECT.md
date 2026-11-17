@@ -41,7 +41,7 @@ docker compose up -d                                   # Postgres + Redis (repo 
 cd backend && source .venv/bin/activate                # Python env
 pip install -r requirements-dev.txt                    # backend deps
 ruff check . && ruff format .                          # lint + format (backend/)
-pytest -q                                              # backend tests (needs docker compose up)
+pytest -q                                              # backend tests (uses isolated gamepulse_test DB + Redis DB 15; needs docker compose up)
 uvicorn app.main:app --reload                          # API at :8000, docs at /docs
 alembic upgrade head                                   # apply migrations
 alembic revision --autogenerate -m "message"          # new migration
@@ -53,7 +53,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 3 complete (backend foundation). Next: Phase 4, authentication and game management.
+Phase 4 complete (auth, games, API keys). Next: Phase 5, players and sessions.
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -61,8 +61,10 @@ Phase 3 complete (backend foundation). Next: Phase 4, authentication and game ma
 
 - Phase 3: FastAPI app factory, settings, async SQLAlchemy, Redis client, Alembic (async), JSON logging with request ids, error envelope, liveness and readiness probes, 9 passing tests.
 
+- Phase 4: developer register/login (Argon2id, JWT), profile, role-based access, games CRUD (soft delete), API keys (hashed, shown once, rotate/revoke), `X-API-Key` game auth, Redis rate limiting on auth, first Alembic migration, isolated test DB, 49 tests including cross-tenant isolation.
+
 ## Pending milestones
-4 Auth and games → 5 Players and sessions → 6 Scores, leaderboards, achievements → 7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
+5 Players and sessions → 6 Scores, leaderboards, achievements → 7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
 
 ## Architectural decisions
 - Postgres and Redis run via Docker Compose in development.

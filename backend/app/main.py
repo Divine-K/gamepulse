@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import admin, auth, game_api, games, health
 from app.core.config import get_settings
 from app.core.database import dispose_engine
 from app.core.errors import register_error_handlers
@@ -42,7 +42,8 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RequestContextMiddleware)
     register_error_handlers(app)
-    app.include_router(health.router)
+    for router in (health.router, auth.router, games.router, game_api.router, admin.router):
+        app.include_router(router)
     return app
 
 
