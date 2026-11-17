@@ -75,3 +75,9 @@ This is the design contract for Phases 3 to 7. The interactive reference will be
 ## Event types (ingestion)
 
 Known types (payload validated): `player_registered`, `session_started`, `session_ended`, `score_submitted`, `achievement_unlocked`, `player_level_up`. Any type starting with `custom_` accepts free-form JSON (max 8 KB).
+
+## Implemented in Phases 5 and 6
+
+- **Scores:** `POST /game/scores` appends to a ledger. With a `session_id` and category `score` it also sets the session's live score. `POST /game/sessions/{id}/end` takes an optional final `score` (default: the live score) and returns `unlocked_achievements`.
+- **Leaderboards:** `GET /game/leaderboards/{metric}` and `GET /games/{game_id}/leaderboards/{metric}`. Metrics: `total_score`, `best_score`, `wins`, `achievements`, `completed_sessions`, or `category:<name>`. Query: `limit`, `offset`, `q`, `min_value`, `order`, `period` (category metrics only). Ranks are competition ranks (ties share a rank) computed before search filtering. `GET /game/leaderboards/{metric}/players/{external_id}` returns one player's rank.
+- **Achievements:** each new game is seeded with First Game, Dedicated Player, High Scorer, Veteran, Winner and an opt-in Champion. Condition types: `sessions_completed`, `score_reached`, `total_play_seconds`, `wins`, `leaderboard_rank`. Awards are permanent and unique per player, enforced by a database constraint. Editing a threshold applies to future evaluations (at a player's next session end).

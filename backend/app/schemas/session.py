@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.achievement import AchievementBrief
 from app.schemas.player import PlayerBrief
 
 SessionStatus = Literal["active", "completed", "abandoned"]
@@ -15,7 +16,12 @@ class SessionStart(BaseModel):
 
 
 class SessionEnd(BaseModel):
-    score: int = Field(default=0, ge=0, le=2_000_000_000)
+    score: int | None = Field(
+        default=None,
+        ge=0,
+        le=2_000_000_000,
+        description="Final score. Defaults to the live score sent via /scores (or 0).",
+    )
     result: SessionResult | None = None
 
 
@@ -32,3 +38,9 @@ class SessionOut(BaseModel):
     last_heartbeat_at: datetime
     is_simulated: bool
     player: PlayerBrief
+
+
+class SessionEndOut(SessionOut):
+    unlocked_achievements: list[AchievementBrief] = Field(
+        default_factory=list, description="Achievements newly awarded by this call"
+    )

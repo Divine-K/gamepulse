@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, auth, game_api, games, health, players
+from app.api import achievements, admin, auth, game_api, games, health, leaderboards, players
 from app.core.config import get_settings
 from app.core.database import dispose_engine, get_session_factory
 from app.core.errors import register_error_handlers
@@ -75,6 +75,8 @@ def create_app() -> FastAPI:
         auth.router,
         games.router,
         players.router,
+        achievements.router,
+        leaderboards.router,
         game_api.router,
         admin.router,
     ):

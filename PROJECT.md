@@ -53,7 +53,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 5 complete (players and sessions). Next: Phase 6, scores, leaderboards and achievements.
+Phase 6 complete (scores, leaderboards, achievements). Next: Phase 7, real-time infrastructure.
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -65,8 +65,10 @@ Phase 5 complete (players and sessions). Next: Phase 6, scores, leaderboards and
 
 - Phase 5: players (idempotent registration, stats), session lifecycle (start with Idempotency-Key, heartbeat, end, abandon via lazy reclaim + background reaper), history, dashboard player/session views, composite-FK tenant integrity, row locking, 80 tests.
 
+- Phase 6: score ledger + live session scores, metric-based leaderboards (competition ranking, search, order, min_value, `category:<name>` metrics with periods, player rank), configurable achievement engine (5 condition types, default set seeded per game, DB-enforced no duplicates), dashboard achievement management and unlock stats, 108 tests.
+
 ## Pending milestones
-6 Scores, leaderboards, achievements → 7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
+7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
 
 ## Architectural decisions
 - Postgres and Redis run via Docker Compose in development.
