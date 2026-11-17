@@ -29,4 +29,15 @@ Python, FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, WebSockets, JWT, React,
 
 ## Getting started
 
-Setup instructions will be added as each phase lands. See `PROJECT.md` for the project handbook and roadmap.
+Quick start (development):
+
+```bash
+cp .env.example .env            # then set real secrets
+docker compose up -d            # PostgreSQL + Redis
+cd backend && python3.13 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt && alembic upgrade head
+uvicorn app.main:app --reload   # API on http://localhost:8000 (docs at /docs)
+cd ../frontend && npm install && npm run dev   # dashboard on http://localhost:5173
+```
+
+Full setup instructions will be expanded as each phase lands. See `PROJECT.md` for the project handbook and roadmap.

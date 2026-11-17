@@ -12,7 +12,7 @@ External games → REST (X-API-Key) → FastAPI → services → repositories �
 
 ## Tech stack
 Backend: Python 3.13, FastAPI, SQLAlchemy, Alembic, Pydantic, Pytest, HTTPX, Ruff.
-Frontend: React, TypeScript, Vite, Tailwind, Motion, Recharts, React Router, TanStack Query, React Hook Form, Zod, Vitest, Playwright, ESLint, Prettier.
+Frontend: React 19, TypeScript 6.0 (typescript-eslint does not support TS 7 yet), Vite, Tailwind, Motion, Recharts, React Router, TanStack Query, React Hook Form, Zod, Vitest, Playwright, ESLint, Prettier.
 Infra: PostgreSQL, Redis, Docker Compose, GitHub Actions.
 
 ## Folder structure
@@ -45,7 +45,8 @@ pytest -q                                              # backend tests (uses iso
 uvicorn app.main:app --reload                          # API at :8000, docs at /docs
 alembic upgrade head                                   # apply migrations
 alembic revision --autogenerate -m "message"          # new migration
-cd frontend && npm install && npm run dev              # dashboard
+cd frontend && npm install && npm run dev              # dashboard on :5173
+cd frontend && npm run lint && npm test && npm run build   # ESLint, Vitest, typecheck + build
 ```
 Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.md`.
 
@@ -53,7 +54,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 7 complete (real-time). Next: Phase 8, frontend foundation and design system.
+Phase 8 complete (frontend foundation). Next: backend event ingestion and analytics endpoints, then Phase 9 (interactive dashboard).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
