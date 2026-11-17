@@ -55,7 +55,9 @@ export function SettingsPage() {
       authApi.updateMe({ current_password: v.current_password, new_password: v.new_password }),
     onSuccess: () => {
       password.reset()
-      toast.success('Password changed', 'Use the new password next time you log in.')
+      // The server invalidates every existing token when the password changes, so sign in again.
+      toast.success('Password changed', 'Please log in again with your new password.')
+      logout()
     },
     onError: (e) => {
       if (e instanceof ApiError && e.status === 403)

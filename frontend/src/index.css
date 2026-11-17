@@ -25,7 +25,7 @@
   /* Text */
   --fg: #e8ebf2;
   --muted: #9aa3b5;
-  --subtle: #6b7488;
+  --subtle: #8993a8;
 
   /* Brand accent (royal blue) and a secondary for charts */
   --accent: #2563eb;
@@ -71,7 +71,7 @@
   --line-strong: #c9d0de;
   --fg: #11141b;
   --muted: #4f5a70;
-  --subtle: #758097;
+  --subtle: #5f6a80;
   --accent: #2563eb;
   --accent-fg: #ffffff;
   --accent-text: #1d4ed8;
@@ -81,10 +81,10 @@
   --series-2: #eb6834;
   --series-3: #1baf7a;
   --series-4: #eda100;
-  --success: #15803d;
-  --warning: #b45309;
-  --danger: #dc2626;
-  --info: #2563eb;
+  --success: #166534;
+  --warning: #92400e;
+  --danger: #b91c1c;
+  --info: #1d4ed8;
   --success-soft: rgb(21 128 61 / 0.1);
   --warning-soft: rgb(180 83 9 / 0.1);
   --danger-soft: rgb(220 38 38 / 0.1);

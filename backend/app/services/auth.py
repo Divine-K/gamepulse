@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,5 +61,7 @@ class AuthService:
             if not valid:
                 raise AppError("invalid_credentials", "Current password is incorrect.", 403)
             developer.password_hash = await asyncio.to_thread(hash_password, data.new_password)
+            # Invalidate every token issued so far, including a stolen one.
+            developer.password_changed_at = datetime.now(UTC)
         await self.session.commit()
         return developer

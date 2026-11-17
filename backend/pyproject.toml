@@ -12,6 +12,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
 "alembic/env.py" = ["E402"]
 "alembic/versions/*" = ["E501"]  # generated
 "tests/*" = ["E501"]  # long assertions and SQL strings are fine in tests
+"scripts/*" = ["E501", "E402"]  # run as standalone files; long SQL and table rows
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -43,6 +43,10 @@ async def get_current_developer(
     developer = await DeveloperRepository(db).get(developer_id)
     if developer is None or not developer.is_active:
         raise _unauthorized("invalid_token", "Invalid or expired token.")
+    changed = developer.password_changed_at
+    if changed is not None and int(claims.get("iat", 0)) < int(changed.timestamp()):
+        # Issued before the password was changed: a stolen token stops working immediately.
+        raise _unauthorized("invalid_token", "Invalid or expired token.")
     return developer
 
 
