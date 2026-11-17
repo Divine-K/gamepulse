@@ -63,6 +63,8 @@ function dashboardRoutes(): Routes {
         period: 'all',
       }),
     'GET /api/v1/games/g1/achievements/unlocks?limit=5': () => json(page([])),
+    'GET /api/v1/games/g1/sessions?limit=6': () => json(page([])),
+    'GET /api/v1/games/g1/achievements': () => json([]),
   }
 }
 

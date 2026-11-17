@@ -5,7 +5,11 @@ import { AchievementIcon } from '../components/AchievementIcon'
 import { ChartCard } from '../components/charts/ChartCard'
 import { TimeSeries } from '../components/charts/TimeSeries'
 import { NoGame } from '../components/NoGame'
+import { StatusBadge } from '../components/StatusBadge'
+import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
+import { DataTable } from '../components/ui/DataTable'
+import { ProgressBar } from '../components/ui/ProgressBar'
 import { Card, CardBody, CardHeader } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Segmented } from '../components/ui/Segmented'
@@ -24,7 +28,7 @@ import {
   formatTime,
   timeAgo,
 } from '../lib/format'
-import { achievementsApi, analyticsApi, leaderboardApi } from '../services/endpoints'
+import { achievementsApi, analyticsApi, leaderboardApi, sessionsApi } from '../services/endpoints'
 
 const RANGES = [
   { value: 7, label: '7 days' },
@@ -46,6 +50,12 @@ export function OverviewPage() {
   )
   const top = useGameData(['leaderboard', 'preview'], (id, signal) =>
     leaderboardApi.get(id, 'total_score', { limit: 5 }, signal),
+  )
+  const recent = useGameData(['sessions', 'recent'], (id, signal) =>
+    sessionsApi.list(id, { limit: 6 }, signal),
+  )
+  const achievements = useGameData(['achievements'], (id, signal) =>
+    achievementsApi.list(id, signal),
   )
   const unlocks = useGameData(['unlocks', 'preview'], (id, signal) =>
     achievementsApi.unlocks(id, { limit: 5 }, signal),
@@ -76,7 +86,7 @@ export function OverviewPage() {
         actions={<Segmented label="Date range" options={RANGES} value={days} onChange={setDays} />}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           icon={Users}
           label="Total players"
@@ -139,37 +149,129 @@ export function OverviewPage() {
         />
       </div>
 
-      <div className="mt-4">
-        <ChartCard
-          title="Player activity"
-          description={`Daily active players, new players and sessions started, last ${days} days.`}
-          loading={engagement.isLoading}
-          emptyMessage={hasActivity ? undefined : 'No activity in this period yet.'}
-          legend={[
-            { label: 'Active players', color: 'var(--series-1)' },
-            { label: 'New players', color: 'var(--series-2)' },
-            { label: 'Sessions started', color: 'var(--series-3)' },
-          ]}
-          table={{
-            columns: ['Date', 'Active players', 'New players', 'Sessions started'],
-            rows: points.map((p) => [
-              formatShortDate(p.date),
-              p.active_players,
-              p.new_players,
-              p.sessions_started,
-            ]),
-          }}
-        >
-          <TimeSeries
-            data={points as unknown as { date: string }[]}
-            series={[
-              { key: 'active_players', label: 'Active players', color: 'var(--series-1)' },
-              { key: 'new_players', label: 'New players', color: 'var(--series-2)' },
-              { key: 'sessions_started', label: 'Sessions started', color: 'var(--series-3)' },
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <ChartCard
+            title="Player activity"
+            description={`Daily active players, new players and sessions started, last ${days} days.`}
+            loading={engagement.isLoading}
+            emptyMessage={hasActivity ? undefined : 'No activity in this period yet.'}
+            legend={[
+              { label: 'Active players', color: 'var(--series-1)' },
+              { label: 'New players', color: 'var(--series-2)' },
+              { label: 'Sessions started', color: 'var(--series-3)' },
+            ]}
+            table={{
+              columns: ['Date', 'Active players', 'New players', 'Sessions started'],
+              rows: points.map((p) => [
+                formatShortDate(p.date),
+                p.active_players,
+                p.new_players,
+                p.sessions_started,
+              ]),
+            }}
+          >
+            <TimeSeries
+              data={points as unknown as { date: string }[]}
+              series={[
+                { key: 'active_players', label: 'Active players', color: 'var(--series-1)' },
+                { key: 'new_players', label: 'New players', color: 'var(--series-2)' },
+                { key: 'sessions_started', label: 'Sessions started', color: 'var(--series-3)' },
+              ]}
+            />
+          </ChartCard>
+        </div>
+        <Card>
+          <CardHeader
+            title="Achievement progress"
+            description="Share of players who unlocked each one."
+            action={
+              <Link to="/achievements" className="text-sm text-accent-text hover:underline">
+                Manage
+              </Link>
+            }
+          />
+          <CardBody>
+            {achievements.isLoading ? (
+              <Skeleton className="h-40" />
+            ) : (achievements.data?.length ?? 0) === 0 ? (
+              <p className="py-6 text-center text-sm text-muted">No achievements yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {achievements
+                  .data!.filter((a) => a.is_enabled)
+                  .slice(0, 5)
+                  .map((a) => (
+                    <li key={a.id}>
+                      <div className="mb-1.5 flex items-center justify-between text-sm">
+                        <span>{a.name}</span>
+                        <span className="font-medium tabular-nums">
+                          {formatPercent(a.unlock_rate)}
+                        </span>
+                      </div>
+                      <ProgressBar
+                        value={a.unlock_rate}
+                        label={`${a.name}: ${formatPercent(a.unlock_rate)} of players`}
+                      />
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      <Card className="mt-4">
+        <CardHeader
+          title="Recent sessions"
+          description="The latest play sessions across your players."
+          action={
+            <Link to="/sessions" className="text-sm text-accent-text hover:underline">
+              View all
+            </Link>
+          }
+        />
+        <div className="mt-2">
+          <DataTable
+            caption="Recent sessions"
+            loading={recent.isLoading}
+            rows={recent.data?.items}
+            rowKey={(x) => x.id}
+            skeletonRows={4}
+            empty={
+              <p className="px-5 py-8 text-center text-sm text-muted">
+                No sessions yet. They appear as players start playing.
+              </p>
+            }
+            columns={[
+              {
+                key: 'player',
+                header: 'Player',
+                cell: (x) => (
+                  <Link
+                    to={`/players/${x.player.id}`}
+                    className="flex items-center gap-3 hover:underline"
+                  >
+                    <Avatar name={x.player.username} />
+                    <span>
+                      <span className="block font-medium">{x.player.username}</span>
+                      <span className="block text-xs text-muted">{x.player.external_id}</span>
+                    </span>
+                  </Link>
+                ),
+              },
+              { key: 'status', header: 'Status', cell: (x) => <StatusBadge status={x.status} /> },
+              { key: 'score', header: 'Score', align: 'right', cell: (x) => formatNumber(x.score) },
+              {
+                key: 'duration',
+                header: 'Duration',
+                cell: (x) => formatDuration(x.duration_seconds),
+              },
+              { key: 'when', header: 'Started', cell: (x) => timeAgo(x.started_at) },
             ]}
           />
-        </ChartCard>
-      </div>
+        </div>
+      </Card>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card>

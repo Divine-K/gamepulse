@@ -191,7 +191,7 @@ export default function App() {
                 </Page>
               }
             />
-            {['playground', 'docs'].map((path) => (
+            {['playground', 'simulator', 'docs'].map((path) => (
               <Route
                 key={path}
                 path={path}

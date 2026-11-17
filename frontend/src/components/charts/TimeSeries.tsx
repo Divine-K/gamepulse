@@ -42,6 +42,14 @@ export function TimeSeries<K extends string>({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <defs>
+          {series.map((s) => (
+            <linearGradient key={s.key} id={`wash-${s.key}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={s.color} stopOpacity={0.22} />
+              <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+            </linearGradient>
+          ))}
+        </defs>
         <CartesianGrid vertical={false} stroke="var(--line)" strokeWidth={1} />
         <XAxis
           dataKey="date"
@@ -77,8 +85,7 @@ export function TimeSeries<K extends string>({
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill={s.color}
-            fillOpacity={0.1}
+            fill={`url(#wash-${s.key})`}
             dot={false}
             activeDot={{ r: 5, stroke: 'var(--surface)', strokeWidth: 2, fill: s.color }}
             isAnimationActive
