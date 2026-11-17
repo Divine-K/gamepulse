@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     secret_key: str = Field(min_length=32)
     access_token_expire_minutes: int = 60
+    auth_rate_limit_per_minute: int = 10
 
     database_url: str
     redis_url: str = "redis://localhost:6379/0"
