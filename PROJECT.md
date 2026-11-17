@@ -51,6 +51,7 @@ cd frontend && npm run e2e                                 # Playwright (isolate
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build   # production stack on :8080
 python backend/scripts/smoke.py http://localhost:8080      # smoke test a running stack (--api-only for an API without the dashboard)
 GAMEPULSE_KEY=gp_... python examples/surfer/play.py        # example game plays itself through the Game API
+GAMEPULSE_KEY=gp_... python examples/lichess/bridge.py     # mirror live Lichess games into GamePulse (no Lichess key needed)
 cd backend && python scripts/seed_demo.py --game-id <uuid> # spread one game's timestamps over 14 days (demo data)
 cd frontend && node scripts/screenshots.mjs                # rebuild docs/screenshots (needs API :8000 and dashboard :5173)
 ```
@@ -87,6 +88,8 @@ All 13 phases are built and verified. The free-tier deployment is live (Cloudfla
 - Phase 12 (deployment): free-tier deployment prepared and executed: `render.yaml` Blueprint (API and Key Value on Render free plans), `deploy/cloudflare/` build for Cloudflare Pages (strict CSP limited to the API origin, SPA fallback), Neon PostgreSQL, `docs/deploy-free-tiers.md`, `smoke.py --api-only`. Verified live: readiness, full smoke test, CORS preflight, dashboard headers.
 
 - Phase 13: professional README (screenshots, diagrams, quality table), `docs/getting-started.md`, `docs/integration-guide.md` (real API responses), `docs/roadmap.md` (built, known limits, next), nine dashboard screenshots built by `frontend/scripts/screenshots.mjs`, the Surfer example game (`examples/surfer`, dependency-free client, covered by a backend test), `backend/scripts/seed_demo.py` for demo data, corrections found while documenting (rate-limit headers, abandoned-session timeout, stale Live Events copy). 213 backend, 102 frontend and 21 end-to-end tests.
+
+- Real game demo: `examples/lichess/bridge.py` mirrors live Lichess TV games (free public API, no key) into GamePulse as two sessions per game, material-based live scores, `custom_capture` and `custom_game_*` events, wins and a `category:rating` leaderboard; recovers sessions left open by a crashed run; `docs/real-game-demo.md`; 6 tests against a fake Lichess server (mutation-checked). Verified live: 12 real games, 129 captures, 24 sessions with real durations. 219 backend, 102 frontend and 21 end-to-end tests.
 
 ## Pending milestones
 None of the 13 planned phases. Optional next steps are listed in docs/roadmap.md.

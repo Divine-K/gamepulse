@@ -177,6 +177,8 @@ python examples/surfer/play.py --base-url https://gamepulse-api-xbkp.onrender.co
 
 Open the dashboard while it runs: the Live Events page fills in as it plays, then Overview, Leaderboards and Analytics show the result. A test in the backend suite runs this example against a real server, so it stays correct as the API evolves.
 
+For a **real** game, see the [Lichess bridge](real-game-demo.md): it follows live chess games on lichess.org and reports them through the same API.
+
 ## 8. Good practice
 
 - **Send from your server when you can.** A key inside a shipped client can be extracted. For a client-side game, send through your own backend.

@@ -75,7 +75,7 @@ Or run the bundled example game, which plays itself through the API and fills th
 GAMEPULSE_KEY=$KEY python examples/surfer/play.py --base-url https://gamepulse-api-xbkp.onrender.com --players 12
 ```
 
-The full walkthrough, with a copy-paste client, is in the [integration guide](docs/integration-guide.md).
+The full walkthrough, with a copy-paste client, is in the [integration guide](docs/integration-guide.md). To see GamePulse with a **real** game and real players, the [Lichess bridge](docs/real-game-demo.md) streams live chess games from lichess.org into a dashboard, with no account or key needed.
 
 ## Run it locally
 
@@ -121,7 +121,7 @@ Step-by-step instructions, the production Docker stack and troubleshooting are i
 
 | Check | Result |
 |---|---|
-| Backend tests (real PostgreSQL and Redis) | 213 passing |
+| Backend tests (real PostgreSQL and Redis) | 219 passing |
 | Frontend unit and component tests | 102 passing |
 | End-to-end tests (Playwright, real Chrome, isolated stack) | 21 passing |
 | Lint, formatting, type check | clean (Ruff, ESLint, Prettier, TypeScript) |
@@ -135,6 +135,7 @@ GitHub Actions runs all of this on every push, including a job that builds the D
 |---|---|
 | [Getting started](docs/getting-started.md) | Local setup, the production Docker stack, demo data, troubleshooting |
 | [Integration guide](docs/integration-guide.md) | Connect a game: every call, a copy-paste client, error handling |
+| [Real game demo](docs/real-game-demo.md) | Live chess from Lichess mirrored into GamePulse in real time |
 | [API guide](docs/api-guide.md) | Conventions, endpoints, events and analytics definitions |
 | [Architecture](docs/architecture.md) | System design, real-time design, frontend, decision records |
 | [Database schema](docs/database-schema.md) | ER diagram, tables, constraints, indexes |
@@ -150,6 +151,7 @@ GitHub Actions runs all of this on every push, including a job that builds the D
 | `backend/` | FastAPI application, Alembic migrations, tests, scripts (smoke, load test, demo seeding) |
 | `frontend/` | React and TypeScript dashboard, unit tests, Playwright suite, nginx config |
 | `examples/surfer/` | A pretend game and a dependency-free Python client for the Game API |
+| `examples/lichess/` | A bridge that mirrors live Lichess chess games into GamePulse |
 | `docs/` | Documentation and screenshots |
 | `deploy/` and `render.yaml` | Cloudflare Pages build and Render blueprint for the free-tier deployment |
 | `.github/workflows/` | CI pipeline |
