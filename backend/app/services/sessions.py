@@ -82,6 +82,7 @@ class SessionService:
             started_at=now,
             last_heartbeat_at=now,
             idempotency_key=idempotency_key,
+            is_simulated=simulated,
         )
         self.sessions.add(game_session)
         try:
