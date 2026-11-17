@@ -54,7 +54,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 8 and the event/analytics backend are complete. Next: Phase 9 (interactive dashboard).
+Phase 9 complete (interactive dashboard). Next: Phase 10 (API playground and live event simulator).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.

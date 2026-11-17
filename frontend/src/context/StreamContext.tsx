@@ -35,6 +35,7 @@ export function StreamProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = tokenStore.get()
     if (!enabled || !gameId || !token) return
+    let refreshTimer: number | undefined
     const stream = new GameStream({
       gameId,
       token,
@@ -44,14 +45,23 @@ export function StreamProvider({ children }: { children: ReactNode }) {
           gameId,
           list: [event, ...(current.gameId === gameId ? current.list : [])].slice(0, MAX_EVENTS),
         }))
-        // Server data changed: refetch the live counters (REST is the source of truth).
-        void queryClient.invalidateQueries({ queryKey: ['live', gameId] })
+        // Server data changed. REST is the source of truth, so refresh this game's queries,
+        // at most once per 1.5 s so a burst of events causes a single refetch.
+        if (!refreshTimer) {
+          refreshTimer = window.setTimeout(() => {
+            refreshTimer = undefined
+            void queryClient.invalidateQueries({ queryKey: ['game', gameId] })
+          }, 1500)
+        }
       },
       // Events can be missed while disconnected, so refetch everything on reconnect.
       onReconnected: () => void queryClient.invalidateQueries(),
     })
     stream.start()
-    return () => stream.stop()
+    return () => {
+      window.clearTimeout(refreshTimer)
+      stream.stop()
+    }
   }, [enabled, gameId, queryClient])
 
   const events = useMemo(

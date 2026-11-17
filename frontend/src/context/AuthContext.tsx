@@ -13,6 +13,8 @@ interface AuthValue {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
+  /** Replace the cached profile after an edit. */
+  updateUser: (user: Developer) => void
 }
 
 const AuthContext = createContext<AuthValue | null>(null)
@@ -66,9 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [login],
   )
 
+  const updateUser = useCallback((user: Developer) => {
+    setState((current) => ({ ...current, user }))
+  }, [])
+
   const value = useMemo<AuthValue>(
-    () => ({ ...state, login, register, logout: signOut }),
-    [state, login, register, signOut],
+    () => ({ ...state, login, register, logout: signOut, updateUser }),
+    [state, login, register, signOut, updateUser],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
