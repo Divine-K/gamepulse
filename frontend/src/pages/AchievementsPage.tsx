@@ -184,14 +184,17 @@ export function AchievementsPage() {
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {list.data!.map((a) => (
             <li key={a.id}>
-              <Card className={a.is_enabled ? undefined : 'opacity-70'}>
+              <Card>
                 <CardBody className="space-y-3">
                   <div className="flex items-start gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-text">
                       <AchievementIcon name={a.icon} className="size-5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate font-semibold">{a.name}</h2>
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <span className="truncate">{a.name}</span>
+                        {!a.is_enabled && <Badge>Disabled</Badge>}
+                      </h2>
                       <p className="text-sm text-muted">
                         {describeCondition(a.condition_type, a.threshold)}
                       </p>

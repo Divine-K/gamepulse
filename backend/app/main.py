@@ -26,6 +26,7 @@ from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.redis import close_redis
+from app.core.security_middleware import BodySizeLimitMiddleware, SecurityHeadersMiddleware
 from app.services.sessions import abandon_stale_sessions
 from app.websocket import tracker
 from app.websocket.hub import RealtimeHub
@@ -93,6 +94,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["X-Request-ID"],
     )
+    # Last added runs first: request id -> security headers -> body limit -> CORS -> app.
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_request_body_bytes)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestContextMiddleware)
     register_error_handlers(app)
     for router in (

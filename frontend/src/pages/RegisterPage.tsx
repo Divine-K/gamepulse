@@ -20,6 +20,9 @@ export function RegisterPage() {
   const { status, register: registerAccount } = useAuth()
   const navigate = useNavigate()
   const [formError, setFormError] = useState<string | null>(null)
+  // Once registration succeeds the auth state flips to "authenticated" before navigate() runs;
+  // remember why, so a brand-new developer lands on Games instead of being bounced to Overview.
+  const [justRegistered, setJustRegistered] = useState(false)
   const {
     register,
     handleSubmit,
@@ -27,14 +30,16 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  if (status === 'authenticated') return <Navigate to="/" replace />
+  if (status === 'authenticated') return <Navigate to={justRegistered ? '/games' : '/'} replace />
 
   const onSubmit = handleSubmit(async ({ email, password, display_name }) => {
     setFormError(null)
     try {
+      setJustRegistered(true)
       await registerAccount(email, password, display_name)
       navigate('/games', { replace: true })
     } catch (error) {
+      setJustRegistered(false)
       if (error instanceof ApiError && error.code === 'email_taken') {
         setError('email', { message: 'An account with this email already exists' })
       } else if (error instanceof ApiError && error.status === 429) {

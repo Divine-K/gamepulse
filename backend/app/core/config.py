@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     cors_origins: list[str] = ["http://localhost:5173"]
+    max_request_body_bytes: int = 1_000_000  # larger bodies get 413 before they are read
 
     @field_validator("database_url")
     @classmethod

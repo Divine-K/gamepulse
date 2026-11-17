@@ -115,3 +115,47 @@ async def test_rate_limiter_returns_429_with_retry_after(client: httpx.AsyncClie
     blocked = await client.get("/_test/limited")
     assert blocked.json()["error"]["code"] == "rate_limited"
     assert int(blocked.headers["Retry-After"]) > 0
+
+
+async def test_changing_the_password_invalidates_tokens_issued_before(
+    client: httpx.AsyncClient,
+) -> None:
+    """A stolen token must stop working once the owner changes their password."""
+    import asyncio
+
+    headers = await signup(client, "rotate@example.com")  # token issued now
+    assert (await client.get("/api/v1/developers/me", headers=headers)).status_code == 200
+
+    await asyncio.sleep(1.1)  # tokens carry whole-second timestamps
+    changed = await client.patch(
+        "/api/v1/developers/me",
+        json={"current_password": PASSWORD, "new_password": "brand-new-password"},
+        headers=headers,
+    )
+    assert changed.status_code == 200
+
+    stale = await client.get("/api/v1/developers/me", headers=headers)
+    assert stale.status_code == 401 and stale.json()["error"]["code"] == "invalid_token"
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": "rotate@example.com", "password": "brand-new-password"}
+    )
+    fresh = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    assert (await client.get("/api/v1/developers/me", headers=fresh)).status_code == 200
+
+
+async def test_a_token_issued_in_the_same_second_as_the_change_still_works(
+    client: httpx.AsyncClient,
+) -> None:
+    """The new login right after a password change must not be rejected."""
+    headers = await signup(client, "same-second@example.com")
+    await client.patch(
+        "/api/v1/developers/me",
+        json={"current_password": PASSWORD, "new_password": "brand-new-password"},
+        headers=headers,
+    )
+    login = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "same-second@example.com", "password": "brand-new-password"},
+    )
+    new_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    assert (await client.get("/api/v1/developers/me", headers=new_headers)).status_code == 200

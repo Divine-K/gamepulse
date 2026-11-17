@@ -9,14 +9,10 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        // Split heavy third-party code into separately cached chunks.
+        // Split heavy third-party code into separately cached chunks. The charting library is left
+        // out on purpose: it must stay in the lazily loaded chart pages, not in the entry graph.
         codeSplitting: {
           groups: [
-            {
-              name: 'charts',
-              test: /node_modules[\\/](recharts|d3-|victory-vendor|decimal\.js)/,
-              priority: 30,
-            },
             {
               name: 'motion',
               test: /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)/,
@@ -40,6 +36,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Playwright specs in e2e/ are run by `npm run e2e`, not by Vitest.
+    include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test/setup.ts'],
     css: false,
   },

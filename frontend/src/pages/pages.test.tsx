@@ -434,6 +434,30 @@ describe('Settings page', () => {
     expect(await screen.findByText('Current password is incorrect')).toBeInTheDocument()
   })
 
+  it('signs out after a successful password change, because old tokens stop working', async () => {
+    const patch = vi.fn((_init: RequestInit) =>
+      json({
+        id: 'u1',
+        email: 'ada@example.com',
+        display_name: 'Ada',
+        role: 'developer',
+        created_at: '',
+      }),
+    )
+    routes['PATCH /api/v1/developers/me'] = patch
+    renderApp('/settings')
+    await userEvent.type(await screen.findByLabelText('Current password'), 'old-password')
+    await userEvent.type(screen.getByLabelText('New password'), 'new-password-1')
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'new-password-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }))
+    await waitFor(() => expect(patch).toHaveBeenCalledOnce())
+    expect(JSON.parse(String(patch.mock.calls[0]![0].body))).toEqual({
+      current_password: 'old-password',
+      new_password: 'new-password-1',
+    })
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+  })
+
   it('updates the display name', async () => {
     const patch = vi.fn((init: RequestInit) =>
       json({

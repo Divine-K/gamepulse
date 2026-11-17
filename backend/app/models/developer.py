@@ -18,3 +18,5 @@ class Developer(Base):
     role: Mapped[str] = mapped_column(String(20), default="developer", server_default="developer")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Tokens issued before this moment are rejected (set when the password changes).
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

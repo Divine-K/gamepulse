@@ -19,6 +19,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    // Playwright fixtures call a function named `use`, which the React hooks rule mistakes for a hook.
+    files: ['e2e/**/*.ts'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: { ...globals.node } } },
   prettier,
 )
