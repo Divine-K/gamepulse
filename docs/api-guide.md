@@ -86,3 +86,29 @@ Known types (payload validated): `player_registered`, `session_started`, `sessio
 
 - `WS /api/v1/ws/games/{game_id}`: live event stream for the game's owner. First message must be `{"type":"auth","token":"<jwt>"}`. See `docs/architecture.md` for the protocol, close codes and event types.
 - `GET /api/v1/games/{game_id}/live`: `{active_players, source: "redis"|"postgres", dashboards_connected}`.
+
+## Events and analytics (Phase 8.5)
+
+### Event ingestion
+`POST /api/v1/game/events` (API key; optional `Idempotency-Key`; rate limited per game, default 600/min).
+
+- **Allowed types:** `player_level_up` (payload `{level, previous_level?}`, validated) and any `custom_<name>` (free-form JSON payload, max 8 KB).
+- **Reserved types:** `player_registered`, `session_started`, `session_ended`, `score_submitted` and `achievement_unlocked` are recorded automatically in the same database transaction as the action itself, so they cannot be submitted (422 `reserved_event_type`). Replays and idempotent retries never create duplicates.
+- `player_external_id` and `session_id` are optional but must belong to the calling game (404 otherwise). `occurred_at` must be within the last 7 days and not in the future.
+- A stored custom event is pushed to dashboards as `event.received`.
+
+`GET /api/v1/games/{game_id}/events` is the event log (newest first). Filters: `event_type`, `player_id` (a player's timeline), `session_id`, `since`, `until`, `include_simulated`.
+
+### Analytics (all computed from the `events`, `game_sessions`, `players` and `player_achievements` tables)
+
+| Endpoint | Returns |
+|---|---|
+| `GET /games/{id}/analytics/overview?days=30` | Totals, daily (24h) and monthly (30d) active players, currently active players, plus the selected period next to the previous period for trends |
+| `GET .../analytics/engagement?days=30` | One point per UTC day: active players, new players, sessions started and completed, average session duration, events (quiet days appear as zeros) |
+| `GET .../analytics/retention` | Day-1, day-7 and day-30 retention. `rate` is `null` until players are old enough |
+| `GET .../analytics/scores?buckets=10` | Completed-session score distribution: count, average, median, p90 and contiguous buckets |
+| `GET .../analytics/achievements?days=30` | Unlock count and rate per achievement plus unlocks per day |
+
+All accept `include_simulated=false` to exclude simulator data. `GET /game/analytics/overview` exposes the overview to API-key callers.
+
+**Definitions.** *Active player*: a player with at least one event in the window. *Day-N retention*: of players registered at least N days ago, the share who have an event between N and N+1 days after registering. Score statistics use completed sessions only.

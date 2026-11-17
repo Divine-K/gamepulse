@@ -9,7 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     achievements,
     admin,
+    analytics,
     auth,
+    events,
     game_api,
     games,
     health,
@@ -99,6 +101,8 @@ def create_app() -> FastAPI:
         players.router,
         achievements.router,
         leaderboards.router,
+        events.router,
+        analytics.router,
         realtime.router,
         game_api.router,
         admin.router,

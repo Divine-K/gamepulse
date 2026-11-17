@@ -8,12 +8,14 @@ from fastapi import APIRouter, Depends, Header, Response
 from app.api.achievements import to_out as achievement_out
 from app.api.achievements import to_unlock as unlock_out
 from app.api.leaderboards import LeaderboardQuery
-from app.core.dependencies import ApiKeyGame, DbSession
+from app.core.dependencies import ApiKeyGame, DbSession, enforce_game_rate_limit
 from app.core.errors import AppError
 from app.repositories.achievements import AchievementRepository
 from app.repositories.sessions import SessionRepository
 from app.schemas.achievement import AchievementBrief, AchievementOut, UnlockOut
+from app.schemas.analytics import OverviewOut
 from app.schemas.common import Page, Pagination
+from app.schemas.event import EventCreate, EventOut
 from app.schemas.game import GameOut
 from app.schemas.leaderboard import (
     LeaderboardEntry,
@@ -25,12 +27,16 @@ from app.schemas.leaderboard import (
 from app.schemas.player import PlayerCreate, PlayerOut
 from app.schemas.session import SessionEnd, SessionEndOut, SessionOut, SessionStart
 from app.services.achievements import AchievementService
+from app.services.analytics import AnalyticsService
+from app.services.events import EventService
 from app.services.leaderboards import build_leaderboard
 from app.services.players import PlayerService
 from app.services.scores import ScoreService
 from app.services.sessions import SessionService
 
-router = APIRouter(prefix="/api/v1/game", tags=["game api"])
+router = APIRouter(
+    prefix="/api/v1/game", tags=["game api"], dependencies=[Depends(enforce_game_rate_limit)]
+)
 
 IdempotencyKey = Annotated[
     str | None,
@@ -264,3 +270,42 @@ async def player_achievements(
     return Page(
         items=[unlock_out(r) for r in rows], total=total, limit=page.limit, offset=page.offset
     )
+
+
+# --- events -------------------------------------------------------------------------
+
+
+@router.post(
+    "/events",
+    response_model=EventOut,
+    status_code=201,
+    responses={200: {"description": "Idempotent replay of an earlier request"}},
+    summary="Ingest a custom game event",
+    description=(
+        "Send `player_level_up` (payload `{level, previous_level?}`) or any `custom_<name>` "
+        "event with a free-form JSON payload (max 8 KB). Players, sessions, scores and "
+        "achievements are recorded automatically; those event types cannot be sent here. "
+        "Use an `Idempotency-Key` header to make retries safe."
+    ),
+)
+async def ingest_event(
+    body: EventCreate,
+    game: ApiKeyGame,
+    db: DbSession,
+    response: Response,
+    idempotency_key: IdempotencyKey = None,
+) -> EventOut:
+    event, created = await EventService(db, game).ingest(body, idempotency_key)
+    response.status_code = 201 if created else 200
+    return EventOut.model_validate(event)
+
+
+# --- analytics ----------------------------------------------------------------------
+
+
+@router.get("/analytics/overview", response_model=OverviewOut, summary="Headline statistics")
+async def analytics_overview(
+    game: ApiKeyGame, db: DbSession, days: int = 30, include_simulated: bool = True
+) -> OverviewOut:
+    days = min(max(days, 1), 365)
+    return await AnalyticsService(db, game.id, include_simulated).overview(days)

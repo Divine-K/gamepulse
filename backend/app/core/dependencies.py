@@ -6,10 +6,14 @@ from typing import Annotated
 
 from fastapi import Depends, Header
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import AppError
+from app.core.rate_limit import enforce_rate_limit
+from app.core.redis import get_redis
 from app.core.security import decode_access_token
 from app.models import Developer, Game
 from app.repositories.developers import DeveloperRepository
@@ -77,3 +81,12 @@ async def get_game_from_api_key(
 
 
 ApiKeyGame = Annotated[Game, Depends(get_game_from_api_key)]
+
+
+async def enforce_game_rate_limit(
+    game: ApiKeyGame, redis: Annotated[Redis, Depends(get_redis)]
+) -> None:
+    """Limit each game's API traffic (all of its keys together) per minute."""
+    await enforce_rate_limit(
+        redis, "game_api", str(game.id), get_settings().game_api_rate_limit_per_minute
+    )

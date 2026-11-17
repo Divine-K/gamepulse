@@ -8,6 +8,7 @@ from app.models import Game, Player, PlayerStats
 from app.repositories.players import PlayerRepository
 from app.schemas.player import PlayerCreate
 from app.services import notifications
+from app.services.event_log import record_event
 
 
 def player_not_found() -> AppError:
@@ -20,44 +21,54 @@ class PlayerService:
     def __init__(self, session: AsyncSession, game: Game) -> None:
         self.session = session
         self.game = game
+        self.game_id = game.id  # plain id: safe after a rollback expires ORM objects
         self.players = PlayerRepository(session)
 
     async def register(self, data: PlayerCreate) -> tuple[Player, bool]:
         """Idempotent by external_id. Returns (player, created)."""
-        existing = await self.players.get_by_external_id(self.game.id, data.external_id)
+        existing = await self.players.get_by_external_id(self.game_id, data.external_id)
         if existing:
             return existing, False
 
         player_id = uuid.uuid4()
         player = Player(
             id=player_id,
-            game_id=self.game.id,
+            game_id=self.game_id,
             external_id=data.external_id,
             username=data.username or data.external_id[:64],
             meta=data.metadata,
         )
-        stats = PlayerStats(player_id=player_id, game_id=self.game.id)
+        stats = PlayerStats(player_id=player_id, game_id=self.game_id)
         self.players.add(player, stats)
         try:
+            await self.session.flush()  # the event below references the player
+            record_event(
+                self.session,
+                game_id=self.game_id,
+                event_type="player_registered",
+                player_id=player_id,
+                payload={"username": player.username, "external_id": player.external_id},
+                is_simulated=player.is_simulated,
+            )
             await self.session.commit()
         except IntegrityError:  # concurrent registration of the same external_id
             await self.session.rollback()
-            existing = await self.players.get_by_external_id(self.game.id, data.external_id)
+            existing = await self.players.get_by_external_id(self.game_id, data.external_id)
             if existing is None:
                 raise
             return existing, False
         await self.session.refresh(player, ["stats"])
-        await notifications.player_registered(self.game.id, player)
+        await notifications.player_registered(self.game_id, player)
         return player, True
 
     async def get_by_external_id(self, external_id: str) -> Player:
-        player = await self.players.get_by_external_id(self.game.id, external_id)
+        player = await self.players.get_by_external_id(self.game_id, external_id)
         if player is None:
             raise player_not_found()
         return player
 
     async def get(self, player_id: uuid.UUID) -> Player:
-        player = await self.players.get(self.game.id, player_id)
+        player = await self.players.get(self.game_id, player_id)
         if player is None:
             raise player_not_found()
         return player

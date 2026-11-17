@@ -17,6 +17,7 @@ from app.models import AchievementDefinition, Game, PlayerAchievement, PlayerSta
 from app.repositories.achievements import AchievementRepository
 from app.repositories.leaderboards import LeaderboardRepository
 from app.schemas.achievement import AchievementCreate, AchievementUpdate
+from app.services.event_log import record_event
 
 # Seeded for every new game; developers can edit, disable or add to them.
 DEFAULT_ACHIEVEMENTS = [
@@ -128,7 +129,11 @@ class AchievementEngine:
         self.leaderboards = LeaderboardRepository(session)
 
     async def evaluate(
-        self, player_id: uuid.UUID, session_id: uuid.UUID | None = None
+        self,
+        player_id: uuid.UUID,
+        session_id: uuid.UUID | None = None,
+        *,
+        is_simulated: bool = False,
     ) -> list[AchievementDefinition]:
         pending = await self.definitions.pending_for_player(self.game_id, player_id)
         if not pending:
@@ -160,6 +165,19 @@ class AchievementEngine:
             )
             if inserted.first() is not None:  # False if a concurrent call awarded it first
                 unlocked.append(definition)
+                record_event(
+                    self.session,
+                    game_id=self.game_id,
+                    event_type="achievement_unlocked",
+                    player_id=player_id,
+                    session_id=session_id,
+                    payload={
+                        "achievement_id": str(definition.id),
+                        "key": definition.key,
+                        "name": definition.name,
+                    },
+                    is_simulated=is_simulated,
+                )
 
         if unlocked:
             await self.session.execute(

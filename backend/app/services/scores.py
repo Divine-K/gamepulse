@@ -9,6 +9,7 @@ from app.repositories.players import PlayerRepository
 from app.repositories.sessions import SessionRepository
 from app.schemas.leaderboard import SCORE_CATEGORY_PATTERN, ScoreSubmit
 from app.services import notifications
+from app.services.event_log import record_event
 
 
 class ScoreService:
@@ -48,6 +49,15 @@ class ScoreService:
             value=data.value,
         )
         self.session.add(entry)
+        record_event(
+            self.session,
+            game_id=self.game.id,
+            event_type="score_submitted",
+            player_id=player.id,
+            session_id=data.session_id,
+            payload={"category": data.category, "value": data.value},
+            is_simulated=player.is_simulated,
+        )
         await self.session.execute(
             update(Player).where(Player.id == player.id).values(last_active_at=datetime.now(UTC))
         )

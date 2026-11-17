@@ -26,6 +26,7 @@ SESSION_ABANDONED = "session.abandoned"
 SCORE_SUBMITTED = "score.submitted"
 ACHIEVEMENT_UNLOCKED = "achievement.unlocked"
 LEADERBOARD_UPDATED = "leaderboard.updated"
+EVENT_RECEIVED = "event.received"
 
 
 def channel_for(game_id: uuid.UUID | str) -> str:

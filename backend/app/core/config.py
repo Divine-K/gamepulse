@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     secret_key: str = Field(min_length=32)
     access_token_expire_minutes: int = 60
     auth_rate_limit_per_minute: int = 10
+    game_api_rate_limit_per_minute: int = 600  # per game (API key owner)
 
     # A session with no heartbeat for this long is marked abandoned.
     session_timeout_minutes: int = 15
