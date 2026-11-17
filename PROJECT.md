@@ -54,7 +54,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 8 complete (frontend foundation). Next: backend event ingestion and analytics endpoints, then Phase 9 (interactive dashboard).
+Phase 8 and the event/analytics backend are complete. Next: Phase 9 (interactive dashboard).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -69,6 +69,8 @@ Phase 8 complete (frontend foundation). Next: backend event ingestion and analyt
 - Phase 6: score ledger + live session scores, metric-based leaderboards (competition ranking, search, order, min_value, `category:<name>` metrics with periods, player rank), configurable achievement engine (5 condition types, default set seeded per game, DB-enforced no duplicates), dashboard achievement management and unlock stats, 108 tests.
 
 - Phase 7: Redis pub/sub hub with per-game WebSocket streams (first-message JWT auth, close codes, backpressure, connection limits), best-effort event publishing from services, Redis active-player tracking with Postgres rebuild and fallback, session reaper events, versioned leaderboard cache, live stats endpoint, 131 tests including real WebSocket tests.
+
+- Event ingestion + analytics (Modules 6 and 7): `events` table recorded transactionally for every platform action, validated ingestion of `player_level_up` and `custom_*` events (idempotent, per-game rate limit, `event.received` push), event log with player timelines, analytics endpoints (overview with period comparison, daily engagement, day-1/7/30 retention, score distribution, achievement stats, simulated-data filter), and a fix for a latent rollback/expired-object race. 186 backend tests.
 
 ## Pending milestones
 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.

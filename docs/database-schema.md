@@ -192,3 +192,7 @@ All metrics are SQL aggregates over the tables above: DAU and MAU from `game_ses
 ## Deferred (not in the MVP)
 
 `leaderboard_snapshots` (historical rankings; added in Phase 6 if time allows), event table partitioning by month, Postgres RLS, organizations and subscription plans.
+
+## Event log (implemented)
+
+`events` records every platform action (`player_registered`, `session_started`, `session_ended`, `score_submitted`, `achievement_unlocked`) in the same transaction as the action, plus externally ingested events (`player_level_up`, `custom_*`). It has composite foreign keys to `players` and `game_sessions` (both optional), a unique partial index on `(game_id, idempotency_key)`, and indexes on `(game_id, occurred_at)`, `(game_id, event_type, occurred_at)` and `(player_id, occurred_at)`. The migration backfills history from existing players, sessions and achievements; historical `score_submitted` events are not backfilled.

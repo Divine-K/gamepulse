@@ -15,6 +15,7 @@ from app.repositories.sessions import SessionRepository
 from app.schemas.session import SessionEnd
 from app.services import notifications
 from app.services.achievements import AchievementEngine
+from app.services.event_log import record_event
 
 
 def _session_not_found() -> AppError:
@@ -40,11 +41,13 @@ class SessionService:
     def __init__(self, session: AsyncSession, game: Game) -> None:
         self.session = session
         self.game = game
+        # Plain id, safe to read after a rollback (which expires ORM objects like `game`).
+        self.game_id = game.id
         self.sessions = SessionRepository(session)
         self.players = PlayerRepository(session)
 
     async def get(self, session_id: uuid.UUID) -> GameSession:
-        found = await self.sessions.get(self.game.id, session_id)
+        found = await self.sessions.get(self.game_id, session_id)
         if found is None:
             raise _session_not_found()
         return found
@@ -53,55 +56,67 @@ class SessionService:
         self, player_external_id: str, idempotency_key: str | None
     ) -> tuple[GameSession, bool]:
         """Start a session. Returns (session, created); created=False for an idempotent replay."""
-        player = await self.players.get_by_external_id(self.game.id, player_external_id)
+        player = await self.players.get_by_external_id(self.game_id, player_external_id)
         if player is None:
             raise AppError("player_not_found", "Player not found.", 404)
+        # Capture plain values now: after a rollback every ORM object below is expired.
+        player_id, simulated = player.id, player.is_simulated
 
         if idempotency_key:
-            replay = await self._replay(idempotency_key, player)
+            replay = await self._replay(idempotency_key, player_id)
             if replay:
                 return replay, False
 
         # A crashed client leaves a stale active session; reclaim it instead of blocking forever.
         reclaimed = await self.sessions.abandon_stale(
-            stale_cutoff(), game_id=self.game.id, player_id=player.id
+            stale_cutoff(), game_id=self.game_id, player_id=player_id
         )
-        active = await self.sessions.get_active_for_player(self.game.id, player.id)
+        active = await self.sessions.get_active_for_player(self.game_id, player_id)
         if active:
             raise self._already_active(active)
 
         now = datetime.now(UTC)
         game_session = GameSession(
-            game_id=self.game.id,
-            player_id=player.id,
+            game_id=self.game_id,
+            player_id=player_id,
             started_at=now,
             last_heartbeat_at=now,
             idempotency_key=idempotency_key,
         )
         self.sessions.add(game_session)
-        await self.session.execute(
-            update(PlayerStats)
-            .where(PlayerStats.player_id == player.id)
-            .values(total_sessions=PlayerStats.total_sessions + 1)
-        )
-        await self._touch_player(player.id, now)
         try:
+            await self.session.flush()  # the event below references the session
+            record_event(
+                self.session,
+                game_id=self.game_id,
+                event_type="session_started",
+                player_id=player_id,
+                session_id=game_session.id,
+                is_simulated=simulated,
+                occurred_at=now,
+            )
+            await self.session.execute(
+                update(PlayerStats)
+                .where(PlayerStats.player_id == player_id)
+                .values(total_sessions=PlayerStats.total_sessions + 1)
+            )
+            await self._touch_player(player_id, now)
             await self.session.commit()
         except IntegrityError:
             # Lost a race: a concurrent start created the active session (or reused the key).
             await self.session.rollback()
             if idempotency_key:
-                replay = await self._replay(idempotency_key, player)
+                replay = await self._replay(idempotency_key, player_id)
                 if replay:
                     return replay, False
-            active = await self.sessions.get_active_for_player(self.game.id, player.id)
+            active = await self.sessions.get_active_for_player(self.game_id, player_id)
             if active:
                 raise self._already_active(active) from None
             raise
         started = await self.get(game_session.id)
         for abandoned in await self.sessions.get_many(reclaimed):
-            await notifications.session_abandoned(self.game.id, abandoned)
-        await notifications.session_started(self.game.id, started)
+            await notifications.session_abandoned(self.game_id, abandoned)
+        await notifications.session_started(self.game_id, started)
         return started, True
 
     async def heartbeat(self, session_id: uuid.UUID) -> GameSession:
@@ -111,7 +126,7 @@ class SessionService:
         game_session.last_heartbeat_at = now
         await self._touch_player(game_session.player_id, now)
         await self.session.commit()
-        await notifications.session_heartbeat(self.game.id, game_session.player_id)
+        await notifications.session_heartbeat(self.game_id, game_session.player_id)
         return await self.get(session_id)
 
     async def end(
@@ -146,37 +161,51 @@ class SessionService:
         )
         self.session.add(
             ScoreEntry(
-                game_id=self.game.id,
+                game_id=self.game_id,
                 player_id=game_session.player_id,
                 session_id=game_session.id,
                 category="score",
                 value=final_score,
             )
         )
+        record_event(
+            self.session,
+            game_id=self.game_id,
+            event_type="session_ended",
+            player_id=game_session.player_id,
+            session_id=game_session.id,
+            payload={
+                "score": final_score,
+                "result": data.result,
+                "duration_seconds": duration,
+            },
+            is_simulated=game_session.is_simulated,
+            occurred_at=now,
+        )
         await self.session.flush()
         # Same transaction as the stats update, so the player's totals and awards stay consistent.
-        unlocked = await AchievementEngine(self.session, self.game.id).evaluate(
-            game_session.player_id, game_session.id
+        unlocked = await AchievementEngine(self.session, self.game_id).evaluate(
+            game_session.player_id, game_session.id, is_simulated=game_session.is_simulated
         )
         await self._touch_player(game_session.player_id, now)
         await self.session.commit()
         ended = await self.get(session_id)
-        await notifications.session_ended(self.session, self.game.id, ended, unlocked)
+        await notifications.session_ended(self.session, self.game_id, ended, unlocked)
         return ended, unlocked
 
     # --- helpers ---------------------------------------------------------------------
 
     async def _get_for_update(self, session_id: uuid.UUID) -> GameSession:
-        found = await self.sessions.get(self.game.id, session_id, for_update=True)
+        found = await self.sessions.get(self.game_id, session_id, for_update=True)
         if found is None:
             raise _session_not_found()
         return found
 
-    async def _replay(self, key: str, player: Player) -> GameSession | None:
-        existing = await self.sessions.get_by_idempotency_key(self.game.id, key)
+    async def _replay(self, key: str, player_id: uuid.UUID) -> GameSession | None:
+        existing = await self.sessions.get_by_idempotency_key(self.game_id, key)
         if existing is None:
             return None
-        if existing.player_id != player.id:
+        if existing.player_id != player_id:
             raise AppError(
                 "idempotency_key_reused",
                 "This Idempotency-Key was already used for a different player.",

@@ -44,6 +44,15 @@ export function describeEvent(event: GameEvent): EventView {
         detail: `${who} is now #${d.rank ?? '?'} on ${d.metric ?? 'total_score'}`,
         tone: 'neutral',
       }
+    case 'event.received': {
+      const custom = event.data.event
+      const payload = custom ? JSON.stringify(custom.payload) : ''
+      return {
+        title: 'Custom event',
+        detail: `${custom?.event_type ?? ''} ${payload}`.trim(),
+        tone: 'info',
+      }
+    }
     default:
       return { title: event.type, detail: '', tone: 'neutral' }
   }

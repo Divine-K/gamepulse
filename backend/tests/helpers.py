@@ -88,3 +88,22 @@ async def start_session(
     return await client.post(
         "/api/v1/game/sessions", json={"player_external_id": external_id}, headers=headers
     )
+
+
+async def sql(statement: str, **params) -> None:
+    """Run a raw statement against the test database (used to backdate or flag rows)."""
+    from sqlalchemy import text
+
+    from app.core.database import get_engine
+
+    async with get_engine().begin() as conn:
+        await conn.execute(text(statement), params)
+
+
+async def sql_all(statement: str, **params) -> list:
+    from sqlalchemy import text
+
+    from app.core.database import get_engine
+
+    async with get_engine().connect() as conn:
+        return list((await conn.execute(text(statement), params)).all())

@@ -54,6 +54,7 @@ export type GameEventType =
   | 'score.submitted'
   | 'achievement.unlocked'
   | 'leaderboard.updated'
+  | 'event.received'
 
 export interface PlayerBrief {
   id: string
@@ -85,5 +86,11 @@ export interface GameEvent {
     achievement?: { id: string; key: string; name: string; icon: string }
     metric?: string
     rank?: number | null
+    event?: {
+      id: string
+      event_type: string
+      player_id: string | null
+      payload: Record<string, unknown>
+    }
   }
 }
