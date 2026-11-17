@@ -81,3 +81,8 @@ Known types (payload validated): `player_registered`, `session_started`, `sessio
 - **Scores:** `POST /game/scores` appends to a ledger. With a `session_id` and category `score` it also sets the session's live score. `POST /game/sessions/{id}/end` takes an optional final `score` (default: the live score) and returns `unlocked_achievements`.
 - **Leaderboards:** `GET /game/leaderboards/{metric}` and `GET /games/{game_id}/leaderboards/{metric}`. Metrics: `total_score`, `best_score`, `wins`, `achievements`, `completed_sessions`, or `category:<name>`. Query: `limit`, `offset`, `q`, `min_value`, `order`, `period` (category metrics only). Ranks are competition ranks (ties share a rank) computed before search filtering. `GET /game/leaderboards/{metric}/players/{external_id}` returns one player's rank.
 - **Achievements:** each new game is seeded with First Game, Dedicated Player, High Scorer, Veteran, Winner and an opt-in Champion. Condition types: `sessions_completed`, `score_reached`, `total_play_seconds`, `wins`, `leaderboard_rank`. Awards are permanent and unique per player, enforced by a database constraint. Editing a threshold applies to future evaluations (at a player's next session end).
+
+## Real-time (Phase 7)
+
+- `WS /api/v1/ws/games/{game_id}`: live event stream for the game's owner. First message must be `{"type":"auth","token":"<jwt>"}`. See `docs/architecture.md` for the protocol, close codes and event types.
+- `GET /api/v1/games/{game_id}/live`: `{active_players, source: "redis"|"postgres", dashboards_connected}`.

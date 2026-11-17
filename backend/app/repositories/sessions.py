@@ -1,3 +1,5 @@
+from __future__ import annotations  # the `list` method below shadows the builtin in annotations
+
 import uuid
 from datetime import datetime
 
@@ -80,8 +82,8 @@ class SessionRepository:
         *,
         game_id: uuid.UUID | None = None,
         player_id: uuid.UUID | None = None,
-    ) -> int:
-        """Mark active sessions with no heartbeat since `cutoff` as abandoned."""
+    ) -> list[uuid.UUID]:
+        """Mark active sessions with no heartbeat since `cutoff` as abandoned; return their ids."""
         stmt = (
             update(GameSession)
             .where(GameSession.status == "active", GameSession.last_heartbeat_at < cutoff)
@@ -97,6 +99,7 @@ class SessionRepository:
                     ),
                 ).cast(GameSession.duration_seconds.type),
             )
+            .returning(GameSession.id)
             .execution_options(synchronize_session=False)
         )
         if game_id:
@@ -104,4 +107,14 @@ class SessionRepository:
         if player_id:
             stmt = stmt.where(GameSession.player_id == player_id)
         result = await self.session.execute(stmt)
-        return result.rowcount or 0
+        return [row[0] for row in result]
+
+    async def get_many(self, session_ids: list[uuid.UUID]) -> list[GameSession]:
+        if not session_ids:
+            return []
+        result = await self.session.execute(
+            select(GameSession)
+            .where(GameSession.id.in_(session_ids))
+            .execution_options(populate_existing=True)
+        )
+        return list(result.unique().scalars())

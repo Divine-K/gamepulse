@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     session_timeout_minutes: int = 15
     session_reaper_interval_seconds: int = 60
 
+    # WebSockets
+    ws_auth_timeout_seconds: float = 5.0
+    ws_max_connections_per_game: int = 20
+    ws_queue_size: int = 256  # per-connection buffer; a client that falls behind is dropped
+    leaderboard_cache_ttl_seconds: int = 30
+
     database_url: str
     redis_url: str = "redis://localhost:6379/0"
 

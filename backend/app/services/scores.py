@@ -8,6 +8,7 @@ from app.models import Game, Player, ScoreEntry
 from app.repositories.players import PlayerRepository
 from app.repositories.sessions import SessionRepository
 from app.schemas.leaderboard import SCORE_CATEGORY_PATTERN, ScoreSubmit
+from app.services import notifications
 
 
 class ScoreService:
@@ -52,4 +53,5 @@ class ScoreService:
         )
         await self.session.commit()
         await self.session.refresh(entry)
+        await notifications.score_submitted(self.game.id, player, entry)
         return entry
