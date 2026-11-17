@@ -37,6 +37,13 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Session factory for background tasks that run outside a request."""
+    get_engine()
+    assert _session_factory is not None
+    return _session_factory
+
+
 async def get_db() -> AsyncIterator[AsyncSession]:
     """FastAPI dependency: one session per request, rolled back on error."""
     get_engine()

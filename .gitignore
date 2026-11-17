@@ -32,3 +32,6 @@ test-results/
 # Docker volumes / local data
 *.log
 pgdata/
+
+# Local tool config
+.claude/
