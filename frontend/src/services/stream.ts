@@ -1,5 +1,5 @@
 import type { GameEvent } from '../types/api'
-import { API_BASE_URL } from './api'
+import { API_ORIGIN } from './api'
 
 export type StreamStatus = 'connecting' | 'live' | 'reconnecting' | 'failed' | 'closed'
 
@@ -67,7 +67,7 @@ export class GameStream {
 
   private connect(): void {
     const Impl = this.options.WebSocketImpl ?? WebSocket
-    const url = toWebSocketUrl(this.options.baseUrl ?? API_BASE_URL, this.options.gameId)
+    const url = toWebSocketUrl(this.options.baseUrl ?? API_ORIGIN, this.options.gameId)
     const socket = new Impl(url)
     this.socket = socket
 

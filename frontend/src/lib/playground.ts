@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../services/api'
+import { API_ORIGIN } from '../services/api'
 
 export type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
@@ -276,7 +276,7 @@ export function buildRequest(input: RequestInput): BuiltRequest {
   const search = query.toString()
   return {
     method: endpoint.method,
-    url: `${API_BASE_URL}${path}${search ? `?${search}` : ''}`,
+    url: `${API_ORIGIN}${path}${search ? `?${search}` : ''}`,
     headers,
     body: hasBody ? body : undefined,
   }

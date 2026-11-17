@@ -1,11 +1,11 @@
-import { API_BASE_URL } from '../../services/api'
+import { API_ORIGIN } from '../../services/api'
 import { Card, CardBody, CardHeader } from '../ui/Card'
 import { CodeBlock } from '../ui/CodeBlock'
 
 const KEY = '$GAMEPULSE_KEY'
 
 export function IntegrationPanel() {
-  const base = `${API_BASE_URL}/api/v1/game`
+  const base = `${API_ORIGIN}/api/v1/game`
   const steps = [
     {
       title: '1. Verify your key',
