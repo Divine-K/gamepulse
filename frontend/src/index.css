@@ -34,6 +34,12 @@
   --accent-soft: rgb(62 230 193 / 0.12);
   --violet: #8b7cf6;
 
+  /* Data-viz categorical series (validated for CVD and contrast on the card surface) */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+
   /* Status */
   --success: #4ade80;
   --warning: #fbbf24;
@@ -71,6 +77,10 @@
   --accent-text: #087a66;
   --accent-soft: rgb(15 184 148 / 0.12);
   --violet: #6d5ce0;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
   --success: #15803d;
   --warning: #b45309;
   --danger: #dc2626;
@@ -102,6 +112,10 @@
   --color-accent-text: var(--accent-text);
   --color-accent-soft: var(--accent-soft);
   --color-violet: var(--violet);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);

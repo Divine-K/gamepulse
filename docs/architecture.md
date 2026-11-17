@@ -157,3 +157,11 @@ flowchart TB
 - **Live stream:** one `GameStream` per selected game, shared by all pages. It authenticates with its first message, reconnects with jittered backoff, detects half-open connections with ping/pong, and refetches REST data after any reconnect (ADR-015).
 - **Accessibility:** native `<dialog>` for modals (focus trap and Esc from the platform), labelled form fields with `aria-describedby`/`role="alert"` errors, skip link, `aria-live` toasts, visible focus ring, and `MotionConfig reducedMotion="user"` plus a CSS reduced-motion rule.
 - **Honesty about scope:** pages that are not built yet show a "Soon" badge and a "Not built yet" state instead of fake content.
+
+## 9. Dashboard implementation notes (Phase 9)
+
+- **Query keys and live refresh.** Every game-scoped query starts with `['game', gameId, ...]`. The shared stream invalidates that single prefix (at most once per 1.5 s) whenever an event arrives, so all open pages refresh themselves from REST, the source of truth. Pagination and filters use `keepPreviousData`, so tables don't flash while loading.
+- **Page state in the URL.** Search, sort, page, tab, range and filters live in the query string (`useUrlState`), so views are shareable, survive a refresh and work with the back button.
+- **Charts** follow the data-viz rules in the design system: a validated categorical palette (checked against both card surfaces), 2px lines with a 10% area wash, thin 4px-rounded columns, hairline grid, round y-axis ticks, crosshair/tooltip on hover, a legend for every multi-series chart, and a **Table** toggle on every chart so exact values never depend on colour or hover.
+- **Secrets.** API key secrets exist only in component state while the show-once dialog is open. Lists show only the key prefix. Destructive actions (revoke, rotate, delete game) always go through a confirmation dialog, and deleting a game requires typing its name.
+- **Performance.** Routes are lazy-loaded and third-party code is split into cached vendor chunks (charts, motion, forms, react), so the first load downloads about 45 kB of app code plus shared vendors, and the charting library only loads on pages that draw charts.

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Gamepad2, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { z } from 'zod'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -108,7 +109,14 @@ export function GamesPage() {
               <Card className="h-full transition-colors hover:border-line-strong">
                 <CardBody className="flex h-full flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-semibold text-fg">{g.name}</h2>
+                    <h2 className="font-semibold text-fg">
+                      <Link
+                        to={`/games/${g.id}`}
+                        className="hover:underline focus-visible:underline"
+                      >
+                        {g.name}
+                      </Link>
+                    </h2>
                     {g.id === selected?.id && (
                       <Badge tone="accent">
                         <Check aria-hidden className="size-3" /> Active
