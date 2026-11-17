@@ -121,7 +121,7 @@ Step-by-step instructions, the production Docker stack and troubleshooting are i
 
 | Check | Result |
 |---|---|
-| Backend tests (real PostgreSQL and Redis) | 219 passing |
+| Backend tests (real PostgreSQL and Redis) | 221 passing |
 | Frontend unit and component tests | 102 passing |
 | End-to-end tests (Playwright, real Chrome, isolated stack) | 21 passing |
 | Lint, formatting, type check | clean (Ruff, ESLint, Prettier, TypeScript) |

@@ -55,4 +55,4 @@ The backend suite runs the bridge against a **fake Lichess server on localhost**
 
 ## Another game?
 
-The pattern is the same for any game with a read-only API: read it, translate what happens into players, sessions, scores and events, and send them through the [Game API](integration-guide.md). Good candidates with free public data include Chess.com (finished games by username), Clash Royale (battle logs; needs a free developer key tied to your IP address), and Lichess's own game exports.
+The pattern is the same for any game with a read-only API: read it, translate what happens into players, sessions, scores and events, and send them through the [Game API](integration-guide.md). [`examples/clash_royale/bridge.py`](../examples/clash_royale/bridge.py) does this for Clash Royale: it imports a player's recent battles (needs a free developer key tied to your IP address, and is tested against a fake API only, not the live one). Other good candidates with free public data include Chess.com (finished games by username) and Lichess's own game exports.
