@@ -57,7 +57,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 12 built and verified except the live deployment, which needs the user to choose a free host (see docs/deployment.md). Next: choose a host, then Phase 13 (documentation and portfolio presentation).
+Phase 12 built and verified except the live deployment, which needs the user to choose a free host (see docs/deployment.md; the split free-tier path is prepared in docs/deploy-free-tiers.md). Next: choose a host, then Phase 13 (documentation and portfolio presentation).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.

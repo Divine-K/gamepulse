@@ -62,7 +62,7 @@ Free tiers change often and the figures below come from provider pages and third
 ### Two realistic zero-cost paths
 
 1. **One VM (highest fidelity).** Oracle Always Free VM running `docker-compose.prod.yml`, with a free Cloudflare Tunnel or Caddy in front for HTTPS. The whole stack behaves exactly as tested. Cost: nothing, but it needs a verification card.
-2. **Split free tiers (no always-on server).** Dashboard on Cloudflare Pages, API container on Render, PostgreSQL on Neon, and a small free Redis. Everything stays free, but the API sleeps when idle, so the first visit after a quiet period is slow and the live stream reconnects.
+2. **Split free tiers (no always-on server), prepared:** step-by-step in [deploy-free-tiers.md](deploy-free-tiers.md). Dashboard on Cloudflare Pages, API container on Render, PostgreSQL on Neon, and a small free Redis. Everything stays free, but the API sleeps when idle, so the first visit after a quiet period is slow and the live stream reconnects.
 
 For a portfolio demo, option 2 sleeping is acceptable if the README says so. For a demo that must respond instantly, option 1.
 

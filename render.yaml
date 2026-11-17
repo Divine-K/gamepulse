@@ -1,0 +1,36 @@
+# Render Blueprint: the API container and a Redis-compatible Key Value store, both on free plans.
+# PostgreSQL comes from Neon (Render's free database expires after 30 days), so DATABASE_URL,
+# SECRET_KEY and CORS_ORIGINS are entered in the Render dashboard (sync: false keeps them out of git).
+services:
+  - type: web
+    name: gamepulse-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: WEB_CONCURRENCY
+        value: "1"            # free instances have 512 MB of RAM
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"            # Render's proxy sets X-Forwarded-For; needed for per-IP rate limits
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: gamepulse-redis
+          property: connectionString
+
+  - type: keyvalue
+    name: gamepulse-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []           # private network only: only the API can reach it

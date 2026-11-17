@@ -1,6 +1,7 @@
 """Smoke test for a running GamePulse stack (used locally and in CI against the Docker build).
 
     python scripts/smoke.py http://localhost:8080
+    python scripts/smoke.py https://api.example.com --api-only   # API deployed without the dashboard
 
 It talks to the public entry point only, exactly like a real client: the dashboard, the REST API and
 the live WebSocket. Exits non-zero on the first failure.
@@ -14,7 +15,9 @@ import uuid
 import httpx
 from websockets.asyncio.client import connect
 
-BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080").rstrip("/")
+_ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+BASE = (_ARGS[0] if _ARGS else "http://localhost:8080").rstrip("/")
+API_ONLY = "--api-only" in sys.argv
 
 
 def check(condition: bool, message: str) -> None:
@@ -25,27 +28,31 @@ def check(condition: bool, message: str) -> None:
 
 async def main() -> None:
     async with httpx.AsyncClient(base_url=BASE, timeout=20) as http:
-        page = await http.get("/")
-        check(
-            page.status_code == 200 and '<div id="root">' in page.text, "dashboard HTML is served"
-        )
-        csp = page.headers.get("content-security-policy", "")
-        check(
-            "script-src 'self'" in csp and "frame-ancestors 'none'" in csp,
-            "dashboard sends a strict CSP",
-        )
-        check(page.headers.get("x-content-type-options") == "nosniff", "dashboard sends nosniff")
-        check(
-            "server" not in {k.lower() for k in page.headers}
-            or "nginx/" not in page.headers.get("server", ""),
-            "server version is hidden",
-        )
+        if not API_ONLY:
+            page = await http.get("/")
+            check(
+                page.status_code == 200 and '<div id="root">' in page.text,
+                "dashboard HTML is served",
+            )
+            csp = page.headers.get("content-security-policy", "")
+            check(
+                "script-src 'self'" in csp and "frame-ancestors 'none'" in csp,
+                "dashboard sends a strict CSP",
+            )
+            check(
+                page.headers.get("x-content-type-options") == "nosniff", "dashboard sends nosniff"
+            )
+            check(
+                "server" not in {k.lower() for k in page.headers}
+                or "nginx/" not in page.headers.get("server", ""),
+                "server version is hidden",
+            )
 
-        spa = await http.get("/players/some-id")
-        check(
-            spa.status_code == 200 and '<div id="root">' in spa.text,
-            "unknown paths fall back to the single-page app",
-        )
+            spa = await http.get("/players/some-id")
+            check(
+                spa.status_code == 200 and '<div id="root">' in spa.text,
+                "unknown paths fall back to the single-page app",
+            )
 
         health = await http.get("/health")
         check(health.json() == {"status": "ok"}, "/health is proxied to the API")
