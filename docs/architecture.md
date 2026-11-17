@@ -149,3 +149,11 @@ flowchart TB
 | ADR-013 | **Zero-cost constraint**: only open-source libraries and free tiers; no paid APIs, no paid LLM or AI calls inside the app | Personal portfolio project with no budget | Free hosting tiers sleep, are rate-limited, and may require a card for identity verification, so we check this before choosing a host in Phase 12 |
 | ADR-014 | **One pattern subscription per process** feeding a local per-game fan-out | Simpler and race-free versus per-game subscribe/unsubscribe; works across processes | Each process receives all games' messages and filters locally |
 | ADR-015 | **Real-time is best-effort; Postgres is the source of truth** | A Redis outage must not fail game requests; clients refetch after reconnect | Events can be missed, so the UI must refetch on reconnect |
+
+## 8. Frontend implementation notes (Phase 8)
+
+- **Design tokens** live in `frontend/src/index.css` as CSS variables (surfaces, borders, text, accent, status, shadow, motion). Tailwind exposes them as semantic utilities (`bg-surface`, `text-muted`, `border-line`), so components never use raw colors and dark/light stay consistent. The `/design` route documents them.
+- **State:** server state in TanStack Query; auth, selected game, theme and the live stream are React contexts. The JWT is kept in `sessionStorage` (survives a refresh, not a closed tab); a 401 on an authenticated request signs the user out.
+- **Live stream:** one `GameStream` per selected game, shared by all pages. It authenticates with its first message, reconnects with jittered backoff, detects half-open connections with ping/pong, and refetches REST data after any reconnect (ADR-015).
+- **Accessibility:** native `<dialog>` for modals (focus trap and Esc from the platform), labelled form fields with `aria-describedby`/`role="alert"` errors, skip link, `aria-live` toasts, visible focus ring, and `MotionConfig reducedMotion="user"` plus a CSS reduced-motion rule.
+- **Honesty about scope:** pages that are not built yet show a "Soon" badge and a "Not built yet" state instead of fake content.
