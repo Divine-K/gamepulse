@@ -54,7 +54,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 9 complete (interactive dashboard). Next: Phase 10 (API playground and live event simulator).
+Phase 10 complete (API playground and live event simulator). Next: Phase 11 (QA: Playwright end-to-end tests, security review, performance checks).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -71,6 +71,8 @@ Phase 9 complete (interactive dashboard). Next: Phase 10 (API playground and liv
 - Phase 7: Redis pub/sub hub with per-game WebSocket streams (first-message JWT auth, close codes, backpressure, connection limits), best-effort event publishing from services, Redis active-player tracking with Postgres rebuild and fallback, session reaper events, versioned leaderboard cache, live stats endpoint, 131 tests including real WebSocket tests.
 
 - Event ingestion + analytics (Modules 6 and 7): `events` table recorded transactionally for every platform action, validated ingestion of `player_level_up` and `custom_*` events (idempotent, per-game rate limit, `event.received` push), event log with player timelines, analytics endpoints (overview with period comparison, daily engagement, day-1/7/30 retention, score distribution, achievement stats, simulated-data filter), and a fix for a latent rollback/expired-object race. 186 backend tests.
+
+- Phase 10: restyle to the new visual direction (deep dark canvas, royal blue accent, grouped sidebar, filled active pill). Live event simulator: backend endpoints that act only on simulated players (`is_simulated` carried through sessions, events and real-time payloads), a cleanup that deletes only simulated rows of one game, and a dashboard page with step-by-step controls, a scripted demo and a live WebSocket feed. API playground: endpoint catalogue with real requests, session variables carried between responses, redacted key handling (memory only), status/timing/size/JSON viewer, curl/JavaScript/Python examples that never contain the key. 197 backend and 101 frontend tests.
 
 ## Pending milestones
 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.

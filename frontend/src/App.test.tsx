@@ -129,7 +129,7 @@ describe('app auth flow', () => {
 
   it('marks unbuilt pages honestly instead of faking them', async () => {
     tokenStore.set('saved')
-    renderApp('/playground')
+    renderApp('/docs')
     expect(await screen.findByText('Not built yet')).toBeInTheDocument()
   })
 

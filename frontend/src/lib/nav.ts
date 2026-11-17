@@ -96,7 +96,7 @@ export const NAV_ITEMS: NavItem[] = [
     to: '/playground',
     label: 'API Playground',
     icon: TerminalSquare,
-    built: false,
+    built: true,
     description: 'Try the game API against the real backend.',
   },
   {
@@ -104,7 +104,7 @@ export const NAV_ITEMS: NavItem[] = [
     to: '/simulator',
     label: 'Simulator',
     icon: FlaskConical,
-    built: false,
+    built: true,
     description: 'Simulate a game talking to GamePulse, with no game engine needed.',
   },
   {
