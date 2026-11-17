@@ -40,7 +40,11 @@ Never commit secrets (`.env` is gitignored). Hash passwords and API keys; show A
 docker compose up -d                                   # Postgres + Redis (repo root)
 cd backend && source .venv/bin/activate                # Python env
 pip install -r requirements-dev.txt                    # backend deps
-ruff check .                                           # lint (backend/)
+ruff check . && ruff format .                          # lint + format (backend/)
+pytest -q                                              # backend tests (needs docker compose up)
+uvicorn app.main:app --reload                          # API at :8000, docs at /docs
+alembic upgrade head                                   # apply migrations
+alembic revision --autogenerate -m "message"          # new migration
 cd frontend && npm install && npm run dev              # dashboard
 ```
 Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.md`.
@@ -49,14 +53,16 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 2 complete (design docs in `docs/`). Next: Phase 3, backend foundation.
+Phase 3 complete (backend foundation). Next: Phase 4, authentication and game management.
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
 - Phase 2: `docs/architecture.md` (diagrams, ADR-001 to 013), `docs/database-schema.md` (ER diagram, constraints), `docs/api-guide.md` (conventions, endpoint plan).
 
+- Phase 3: FastAPI app factory, settings, async SQLAlchemy, Redis client, Alembic (async), JSON logging with request ids, error envelope, liveness and readiness probes, 9 passing tests.
+
 ## Pending milestones
-3 Backend foundation → 4 Auth and games → 5 Players and sessions → 6 Scores, leaderboards, achievements → 7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
+4 Auth and games → 5 Players and sessions → 6 Scores, leaderboards, achievements → 7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
 
 ## Architectural decisions
 - Postgres and Redis run via Docker Compose in development.
