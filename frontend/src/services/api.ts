@@ -1,6 +1,13 @@
 import type { ApiErrorBody } from '../types/api'
 
+/**
+ * Base URL of the API. Leave VITE_API_BASE_URL empty to talk to the page's own origin, which is how
+ * the Docker image works: nginx serves the dashboard and proxies /api to the backend.
+ */
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+
+/** Absolute API origin (needed for WebSocket URLs and copy-ready examples). */
+export const API_ORIGIN: string = API_BASE_URL || window.location.origin
 
 const TOKEN_KEY = 'gp-token'
 

@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  push:
+    paths-ignore: ["**/*.md", "docs/**"]
+  pull_request:
+    paths-ignore: ["**/*.md", "docs/**"]
+
+# Cancel superseded runs of the same branch so free build minutes aren't wasted.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Throwaway values for the CI services only. Nothing here is a real secret.
+  DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/gamepulse
+  REDIS_URL: redis://localhost:6379/0
+  SECRET_KEY: ci-only-secret-key-0123456789abcdef0123456789abcdef
+
+jobs:
+  backend:
+    name: Backend (lint + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gamepulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 3s --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 3s --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - name: Pytest (isolated test database, real PostgreSQL and Redis)
+        run: pytest -q
+
+  frontend:
+    name: Frontend (lint + tests + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: End-to-end (Playwright, isolated stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gamepulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 3s --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Backend virtualenv (the Playwright config starts the API from it)
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements.txt
+      - run: npm ci
+        working-directory: frontend
+      - name: Playwright (uses the Google Chrome preinstalled on the runner)
+        run: npx playwright test
+        working-directory: frontend
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-results
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+          retention-days: 7
+
+  docker:
+    name: Docker (build, smoke test, e2e against the production images)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Generate a throwaway production environment
+        run: |
+          {
+            echo "SECRET_KEY=$(openssl rand -hex 32)"
+            echo "POSTGRES_USER=gamepulse"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "POSTGRES_DB=gamepulse"
+            echo "WEB_PORT=8080"
+            # The tests register many accounts from one IP; production keeps the strict defaults.
+            echo "AUTH_RATE_LIMIT_PER_MINUTE=100000"
+            echo "GAME_API_RATE_LIMIT_PER_MINUTE=100000"
+          } > .env.production
+      - name: Build and start the production stack
+        run: docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --wait --wait-timeout 180
+      - name: Smoke test through nginx (REST, WebSocket, headers)
+        run: |
+          pip install httpx websockets
+          python backend/scripts/smoke.py http://localhost:8080
+      - run: npm ci
+        working-directory: frontend
+      - name: Full browser suite against the production images (checks the strict CSP too)
+        run: npx playwright test
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:8080
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose --env-file .env.production -f docker-compose.prod.yml logs --no-color --tail 200
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: docker-playwright-results
+          path: frontend/test-results
+          retention-days: 7
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Python dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt
+      - name: Node dependencies (fail on high or critical)
+        run: |
+          cd frontend
+          npm ci
+          npm audit --audit-level=high

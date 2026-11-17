@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root holds the shared .env used by docker-compose and the backend.
@@ -46,6 +46,14 @@ class Settings(BaseSettings):
         if not value.startswith("postgresql+psycopg://"):
             raise ValueError("DATABASE_URL must start with postgresql+psycopg://")
         return value
+
+    @model_validator(mode="after")
+    def _no_placeholder_secrets_in_production(self) -> "Settings":
+        if self.app_env == "production" and "change-me" in self.secret_key.lower():
+            raise ValueError(
+                "SECRET_KEY is still the placeholder; generate one with `openssl rand -hex 32`"
+            )
+        return self
 
     @property
     def is_production(self) -> bool:

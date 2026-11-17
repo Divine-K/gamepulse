@@ -1,4 +1,4 @@
-import { PASSWORD, createAccount, expect, test } from './fixtures'
+import { API, PASSWORD, createAccount, expect, test } from './fixtures'
 
 test('protected pages send visitors to the login page and back again', async ({
   page,
@@ -82,7 +82,7 @@ test('changing the password signs the user out and invalidates a copied token', 
 
   await expect(page).toHaveURL(/\/login$/)
   // The token someone might have copied earlier no longer works.
-  const stolen = await request.get('http://localhost:8100/api/v1/developers/me', {
+  const stolen = await request.get(`${API}/api/v1/developers/me`, {
     headers: { Authorization: `Bearer ${account.token}` },
   })
   expect(stolen.status()).toBe(401)

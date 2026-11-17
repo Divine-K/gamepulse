@@ -1,7 +1,7 @@
 import { expect, test as base } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
 
-export const API = 'http://localhost:8100'
+export const API = process.env.E2E_BASE_URL ?? 'http://localhost:8100'
 export const PASSWORD = 'e2e-password-123'
 
 let counter = 0

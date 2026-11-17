@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { port: 5173 },
   build: {
+    // Never inline assets as data: URIs: the production Content-Security-Policy forbids them
+    // (font-src 'self'), and separate files are cached better anyway.
+    assetsInlineLimit: 0,
     rolldownOptions: {
       output: {
         // Split heavy third-party code into separately cached chunks. The charting library is left
