@@ -100,11 +100,14 @@ Postgres Row-Level Security was considered and deferred (see ADR-004).
 ## 5. Real-time design
 
 - Redis pub/sub channel per game: `gp:game:{game_id}:events`. Services publish JSON envelopes `{type, game_id, data, ts}`.
-- The `RealtimeHub` subscribes lazily to a game's channel when its first WebSocket client connects and unsubscribes after the last disconnects. Multiple backend processes work because Redis fans out.
-- **Dashboard WebSocket:** `GET /api/v1/ws/games/{game_id}`. The client connects, then sends `{"type":"auth","token":"<jwt>"}` as the first message within 5 seconds. A token in the URL would leak into logs, so none is used. The server verifies ownership and then streams.
+- Each backend process runs one `RealtimeHub` that pattern-subscribes (`gp:game:*:events`) at startup and forwards each message to its local WebSocket clients of that game. Subscribing once at startup, instead of per game on demand, avoids subscribe/unsubscribe races and still works across any number of API processes because Redis fans out.
+- Each connection has a bounded queue (256 messages). A client that falls behind is dropped with close code 1013 rather than letting it hold memory or stall others; it reconnects and refetches over REST.
+- **Dashboard WebSocket:** `WS /api/v1/ws/games/{game_id}`. The client connects, then sends `{"type":"auth","token":"<jwt>"}` as the first message within 5 seconds. A token in the URL would leak into logs, so none is used. The server verifies ownership, replies `{"type":"ready","active_players":N}` and then streams. `{"type":"ping"}` is answered with `{"type":"pong"}`. Close codes: 4400 bad first message, 4401 unauthorized, 4404 game not found (same code for foreign and unknown games), 4408 auth timeout, 4429 too many connections (default 20 per game per process), 1013 client too slow.
 - Client reconnect: exponential backoff with jitter, then a REST refetch after reconnect.
-- **Active sessions:** Redis sorted set `gp:game:{id}:active` with score = last heartbeat timestamp. A background task marks sessions with no heartbeat for N minutes as `abandoned` (default 15, configurable). "Currently active players" is the count of distinct players in that set.
-- Event envelope types: `session.started`, `session.ended`, `score.submitted`, `achievement.unlocked`, `leaderboard.updated`, `event.received`, `player.registered`.
+- **Active players:** Redis sorted set `gp:game:{id}:active` (member = player id, score = last heartbeat). A player counts as active while the score is within the session timeout (default 15 minutes), so crashed clients stop counting even before the reaper runs. The set is rebuilt from `game_sessions` at startup, and reads fall back to Postgres if Redis is down. A background reaper marks timed-out sessions `abandoned` and publishes `session.abandoned`.
+- **Leaderboard cache:** pages are cached in Redis under `gp:game:{id}:lb:{version}:{hash}`. Any change that can alter ranks (session end, score submission) bumps the per-game version, which makes every older entry unreachable. A 30 s TTL is only a safety net.
+- **Best-effort:** publishing, tracking and caching never raise into a request. If Redis is down, game API calls still succeed and the dashboard recovers by refetching.
+- Event envelope: `{id, type, game_id, ts, is_simulated, data}`. Types: `player.registered`, `session.started`, `session.ended`, `session.abandoned`, `score.submitted`, `achievement.unlocked`, `leaderboard.updated` (`event.received` arrives with event ingestion). Idempotent replays emit nothing.
 
 ## 6. Frontend architecture
 
@@ -144,3 +147,5 @@ flowchart TB
 | ADR-011 | **UUID primary keys** | Safe to expose, no enumeration | Larger indexes |
 | ADR-012 | **`is_simulated` flag** on players, sessions and events | Simulator data is clearly labelled and can be cleaned without touching real data | One more column |
 | ADR-013 | **Zero-cost constraint**: only open-source libraries and free tiers; no paid APIs, no paid LLM or AI calls inside the app | Personal portfolio project with no budget | Free hosting tiers sleep, are rate-limited, and may require a card for identity verification, so we check this before choosing a host in Phase 12 |
+| ADR-014 | **One pattern subscription per process** feeding a local per-game fan-out | Simpler and race-free versus per-game subscribe/unsubscribe; works across processes | Each process receives all games' messages and filters locally |
+| ADR-015 | **Real-time is best-effort; Postgres is the source of truth** | A Redis outage must not fail game requests; clients refetch after reconnect | Events can be missed, so the UI must refetch on reconnect |

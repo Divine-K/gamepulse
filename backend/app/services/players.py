@@ -7,6 +7,7 @@ from app.core.errors import AppError
 from app.models import Game, Player, PlayerStats
 from app.repositories.players import PlayerRepository
 from app.schemas.player import PlayerCreate
+from app.services import notifications
 
 
 def player_not_found() -> AppError:
@@ -46,6 +47,7 @@ class PlayerService:
                 raise
             return existing, False
         await self.session.refresh(player, ["stats"])
+        await notifications.player_registered(self.game.id, player)
         return player, True
 
     async def get_by_external_id(self, external_id: str) -> Player:

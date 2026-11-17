@@ -53,7 +53,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 6 complete (scores, leaderboards, achievements). Next: Phase 7, real-time infrastructure.
+Phase 7 complete (real-time). Next: Phase 8, frontend foundation and design system.
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -67,8 +67,10 @@ Phase 6 complete (scores, leaderboards, achievements). Next: Phase 7, real-time 
 
 - Phase 6: score ledger + live session scores, metric-based leaderboards (competition ranking, search, order, min_value, `category:<name>` metrics with periods, player rank), configurable achievement engine (5 condition types, default set seeded per game, DB-enforced no duplicates), dashboard achievement management and unlock stats, 108 tests.
 
+- Phase 7: Redis pub/sub hub with per-game WebSocket streams (first-message JWT auth, close codes, backpressure, connection limits), best-effort event publishing from services, Redis active-player tracking with Postgres rebuild and fallback, session reaper events, versioned leaderboard cache, live stats endpoint, 131 tests including real WebSocket tests.
+
 ## Pending milestones
-7 Real-time → 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
+8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.
 
 ## Architectural decisions
 - Postgres and Redis run via Docker Compose in development.

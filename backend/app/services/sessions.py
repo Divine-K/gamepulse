@@ -13,6 +13,7 @@ from app.models import AchievementDefinition, Game, GameSession, Player, PlayerS
 from app.repositories.players import PlayerRepository
 from app.repositories.sessions import SessionRepository
 from app.schemas.session import SessionEnd
+from app.services import notifications
 from app.services.achievements import AchievementEngine
 
 
@@ -27,9 +28,12 @@ def stale_cutoff(now: datetime | None = None) -> datetime:
 
 async def abandon_stale_sessions(session: AsyncSession) -> int:
     """Mark every timed-out active session abandoned. Run periodically by the reaper."""
-    count = await SessionRepository(session).abandon_stale(stale_cutoff())
+    repo = SessionRepository(session)
+    ids = await repo.abandon_stale(stale_cutoff())
     await session.commit()
-    return count
+    for abandoned in await repo.get_many(ids):
+        await notifications.session_abandoned(abandoned.game_id, abandoned)
+    return len(ids)
 
 
 class SessionService:
@@ -59,7 +63,9 @@ class SessionService:
                 return replay, False
 
         # A crashed client leaves a stale active session; reclaim it instead of blocking forever.
-        await self.sessions.abandon_stale(stale_cutoff(), game_id=self.game.id, player_id=player.id)
+        reclaimed = await self.sessions.abandon_stale(
+            stale_cutoff(), game_id=self.game.id, player_id=player.id
+        )
         active = await self.sessions.get_active_for_player(self.game.id, player.id)
         if active:
             raise self._already_active(active)
@@ -92,7 +98,11 @@ class SessionService:
             if active:
                 raise self._already_active(active) from None
             raise
-        return await self.get(game_session.id), True
+        started = await self.get(game_session.id)
+        for abandoned in await self.sessions.get_many(reclaimed):
+            await notifications.session_abandoned(self.game.id, abandoned)
+        await notifications.session_started(self.game.id, started)
+        return started, True
 
     async def heartbeat(self, session_id: uuid.UUID) -> GameSession:
         game_session = await self._get_for_update(session_id)
@@ -101,6 +111,7 @@ class SessionService:
         game_session.last_heartbeat_at = now
         await self._touch_player(game_session.player_id, now)
         await self.session.commit()
+        await notifications.session_heartbeat(self.game.id, game_session.player_id)
         return await self.get(session_id)
 
     async def end(
@@ -149,7 +160,9 @@ class SessionService:
         )
         await self._touch_player(game_session.player_id, now)
         await self.session.commit()
-        return await self.get(session_id), unlocked
+        ended = await self.get(session_id)
+        await notifications.session_ended(self.session, self.game.id, ended, unlocked)
+        return ended, unlocked
 
     # --- helpers ---------------------------------------------------------------------
 

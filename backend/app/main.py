@@ -6,7 +6,17 @@ from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import achievements, admin, auth, game_api, games, health, leaderboards, players
+from app.api import (
+    achievements,
+    admin,
+    auth,
+    game_api,
+    games,
+    health,
+    leaderboards,
+    players,
+    realtime,
+)
 from app.core.config import get_settings
 from app.core.database import dispose_engine, get_session_factory
 from app.core.errors import register_error_handlers
@@ -14,6 +24,8 @@ from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.redis import close_redis
 from app.services.sessions import abandon_stale_sessions
+from app.websocket import tracker
+from app.websocket.hub import RealtimeHub
 
 logger = logging.getLogger("app.reaper")
 
@@ -32,8 +44,17 @@ async def _reap_stale_sessions_forever(interval_seconds: int) -> None:
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
+    hub = RealtimeHub(settings.ws_max_connections_per_game)
+    app.state.hub = hub
+    await hub.start()
+    try:
+        async with get_session_factory()() as session:
+            restored = await tracker.rebuild(session)
+        logger.info("active_tracker_rebuilt", extra={"players": restored})
+    except Exception:
+        logger.exception("active_tracker_rebuild_failed")
     reaper = None
     if settings.session_reaper_interval_seconds > 0 and settings.app_env != "test":
         reaper = asyncio.create_task(
@@ -44,6 +65,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         reaper.cancel()
         with suppress(asyncio.CancelledError):
             await reaper
+    await hub.stop()
     await close_redis()
     await dispose_engine()
 
@@ -77,6 +99,7 @@ def create_app() -> FastAPI:
         players.router,
         achievements.router,
         leaderboards.router,
+        realtime.router,
         game_api.router,
         admin.router,
     ):

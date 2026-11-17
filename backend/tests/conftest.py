@@ -4,7 +4,9 @@ Tests run against a dedicated `<db>_test` PostgreSQL database (dropped, recreate
 with Alembic each session) and Redis DB 15, so they can never touch development data.
 """
 
+import asyncio
 import os
+import socket
 import subprocess
 import sys
 from collections.abc import AsyncIterator
@@ -28,8 +30,11 @@ os.environ["DATABASE_URL"] = _test_url.set(database=TEST_DB_NAME).render_as_stri
 os.environ["REDIS_URL"] = _dev_settings.redis_url.rsplit("/", 1)[0] + "/15"
 os.environ["APP_ENV"] = "test"
 os.environ["AUTH_RATE_LIMIT_PER_MINUTE"] = "100000"
+os.environ["WS_AUTH_TIMEOUT_SECONDS"] = "1"
+os.environ["WS_MAX_CONNECTIONS_PER_GAME"] = "3"
 
 import httpx  # noqa: E402
+import uvicorn  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from app.core.database import dispose_engine, get_engine  # noqa: E402
@@ -65,6 +70,32 @@ async def client() -> AsyncIterator[httpx.AsyncClient]:
         yield http
     await close_redis()
     await dispose_engine()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def live_server(client: httpx.AsyncClient) -> AsyncIterator[str]:
+    """A real uvicorn server (own app instance and RealtimeHub) in the test event loop.
+
+    HTTP calls through `client` use a different app instance, so events reach WebSocket
+    clients only via Redis pub/sub, exactly like two separate API processes.
+    Returns the WebSocket base URL, e.g. ws://127.0.0.1:54321.
+    """
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    config = uvicorn.Config(
+        create_app(), host="127.0.0.1", port=port, log_config=None, lifespan="on"
+    )
+    server = uvicorn.Server(config)
+    task = asyncio.create_task(server.serve())
+    for _ in range(100):
+        if server.started:
+            break
+        await asyncio.sleep(0.05)
+    assert server.started, "test server failed to start"
+    yield f"ws://127.0.0.1:{port}"
+    server.should_exit = True
+    await task
 
 
 @pytest_asyncio.fixture(autouse=True)
