@@ -54,6 +54,28 @@ async def register_player(
     return response.json()
 
 
+async def play(
+    client: httpx.AsyncClient,
+    key_headers: dict[str, str],
+    external_id: str,
+    score: int,
+    result: str | None = None,
+    *,
+    username: str | None = None,
+) -> dict:
+    """Register the player if needed, run one full session, and return the end response."""
+    await register_player(client, key_headers, external_id, username=username or external_id)
+    started = await start_session(client, key_headers, external_id)
+    assert started.status_code == 201, started.text
+    ended = await client.post(
+        f"/api/v1/game/sessions/{started.json()['id']}/end",
+        json={"score": score, "result": result},
+        headers=key_headers,
+    )
+    assert ended.status_code == 200, ended.text
+    return ended.json()
+
+
 async def start_session(
     client: httpx.AsyncClient,
     key_headers: dict[str, str],

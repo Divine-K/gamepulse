@@ -9,10 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import AppError
-from app.models import Game, GameSession, Player, PlayerStats
+from app.models import AchievementDefinition, Game, GameSession, Player, PlayerStats, ScoreEntry
 from app.repositories.players import PlayerRepository
 from app.repositories.sessions import SessionRepository
 from app.schemas.session import SessionEnd
+from app.services.achievements import AchievementEngine
 
 
 def _session_not_found() -> AppError:
@@ -102,18 +103,22 @@ class SessionService:
         await self.session.commit()
         return await self.get(session_id)
 
-    async def end(self, session_id: uuid.UUID, data: SessionEnd) -> GameSession:
+    async def end(
+        self, session_id: uuid.UUID, data: SessionEnd
+    ) -> tuple[GameSession, list[AchievementDefinition]]:
+        """Complete a session. Returns (session, achievements newly unlocked by this call)."""
         game_session = await self._get_for_update(session_id)
         if game_session.status == "completed":
-            return game_session  # idempotent: never double-count stats
+            return game_session, []  # idempotent: never double-count stats or re-award
         self._require_active(game_session)
 
         now = datetime.now(UTC)
         duration = max(0, int((now - game_session.started_at).total_seconds()))
+        final_score = data.score if data.score is not None else game_session.score
         game_session.status = "completed"
         game_session.ended_at = now
         game_session.duration_seconds = duration
-        game_session.score = data.score
+        game_session.score = final_score
         game_session.result = data.result
         game_session.last_heartbeat_at = now
 
@@ -122,15 +127,29 @@ class SessionService:
             .where(PlayerStats.player_id == game_session.player_id)
             .values(
                 completed_sessions=PlayerStats.completed_sessions + 1,
-                total_score=PlayerStats.total_score + data.score,
-                best_score=func.greatest(PlayerStats.best_score, data.score),
+                total_score=PlayerStats.total_score + final_score,
+                best_score=func.greatest(PlayerStats.best_score, final_score),
                 wins=PlayerStats.wins + (1 if data.result == "win" else 0),
                 total_play_seconds=PlayerStats.total_play_seconds + duration,
             )
         )
+        self.session.add(
+            ScoreEntry(
+                game_id=self.game.id,
+                player_id=game_session.player_id,
+                session_id=game_session.id,
+                category="score",
+                value=final_score,
+            )
+        )
+        await self.session.flush()
+        # Same transaction as the stats update, so the player's totals and awards stay consistent.
+        unlocked = await AchievementEngine(self.session, self.game.id).evaluate(
+            game_session.player_id, game_session.id
+        )
         await self._touch_player(game_session.player_id, now)
         await self.session.commit()
-        return await self.get(session_id)
+        return await self.get(session_id), unlocked
 
     # --- helpers ---------------------------------------------------------------------
 

@@ -12,6 +12,7 @@ from app.models import ApiKey, Developer, Game
 from app.repositories.api_keys import ApiKeyRepository
 from app.repositories.games import GameRepository
 from app.schemas.game import GameCreate, GameUpdate
+from app.services.achievements import seed_default_achievements
 
 LAST_USED_REFRESH_SECONDS = 60
 
@@ -46,6 +47,7 @@ class GameService:
             suffix += 1
             slug = f"{base}-{suffix}"
         game = Game(
+            id=uuid.uuid4(),
             developer_id=developer.id,
             name=data.name.strip(),
             slug=slug,
@@ -54,6 +56,10 @@ class GameService:
         )
         self.games.add(game)
         try:
+            # Flush the game first: achievement rows reference it and the ORM has no
+            # relationship to order the inserts for us.
+            await self.session.flush()
+            seed_default_achievements(self.session, game.id)
             await self.session.commit()
         except IntegrityError:  # concurrent create took the slug
             await self.session.rollback()
