@@ -1,21 +1,49 @@
+import asyncio
+import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, auth, game_api, games, health
+from app.api import admin, auth, game_api, games, health, players
 from app.core.config import get_settings
-from app.core.database import dispose_engine
+from app.core.database import dispose_engine, get_session_factory
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.redis import close_redis
+from app.services.sessions import abandon_stale_sessions
+
+logger = logging.getLogger("app.reaper")
+
+
+async def _reap_stale_sessions_forever(interval_seconds: int) -> None:
+    """Periodically mark sessions with no heartbeat as abandoned."""
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            async with get_session_factory()() as session:
+                count = await abandon_stale_sessions(session)
+            if count:
+                logger.info("abandoned_stale_sessions", extra={"count": count})
+        except Exception:
+            logger.exception("session_reaper_failed")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    settings = get_settings()
+    reaper = None
+    if settings.session_reaper_interval_seconds > 0 and settings.app_env != "test":
+        reaper = asyncio.create_task(
+            _reap_stale_sessions_forever(settings.session_reaper_interval_seconds)
+        )
     yield
+    if reaper:
+        reaper.cancel()
+        with suppress(asyncio.CancelledError):
+            await reaper
     await close_redis()
     await dispose_engine()
 
@@ -42,7 +70,14 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RequestContextMiddleware)
     register_error_handlers(app)
-    for router in (health.router, auth.router, games.router, game_api.router, admin.router):
+    for router in (
+        health.router,
+        auth.router,
+        games.router,
+        players.router,
+        game_api.router,
+        admin.router,
+    ):
         app.include_router(router)
     return app
 

@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     auth_rate_limit_per_minute: int = 10
 
+    # A session with no heartbeat for this long is marked abandoned.
+    session_timeout_minutes: int = 15
+    session_reaper_interval_seconds: int = 60
+
     database_url: str
     redis_url: str = "redis://localhost:6379/0"
 
