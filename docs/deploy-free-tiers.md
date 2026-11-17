@@ -39,7 +39,10 @@ The free service sleeps after 15 minutes without traffic and takes about a minut
    - Environment variable `VITE_API_BASE_URL`: `https://YOUR-API.onrender.com` (no trailing slash)
    - Environment variable `NODE_VERSION`: `22`
 3. Deploy. The build script writes the security headers (a CSP that allows only your API origin and its WebSocket) and a single-page-app fallback into the output.
-4. If the Pages address differs from what you put in `CORS_ORIGINS`, update that variable in Render and redeploy.
+4. Cloudflare adds a random suffix when the project name is taken (for example `gamepulse-71j.pages.dev`); the exact address is shown on the setup page. Put it in `CORS_ORIGINS` in Render (Environment, Edit, then Save, rebuild, and deploy), keeping the JSON list format. Check with:
+   ```bash
+   curl -s -D - -o /dev/null -X OPTIONS https://YOUR-API.onrender.com/api/v1/auth/login -H "Origin: https://YOUR-PROJECT.pages.dev" -H "Access-Control-Request-Method: POST" | grep -i access-control-allow-origin
+   ```
 
 ## 4. Verify
 
