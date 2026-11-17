@@ -4,6 +4,10 @@
 
 **A multi-tenant backend and real-time analytics dashboard for games.** Game developers plug a game in with one API key and get player management, session tracking, leaderboards, achievements, event ingestion and live analytics, without building any of it themselves.
 
+[![GamePulse in 20 seconds: live events, leaderboards and analytics](docs/media/gamepulse-launch.gif)](docs/media/gamepulse-launch.mp4)
+
+<sub>A 20-second tour. [Open the full video with sound.](docs/media/gamepulse-launch.mp4)</sub>
+
 ![The GamePulse dashboard overview](docs/screenshots/overview.png)
 
 **Live demo:** the dashboard is at <https://gamepulse-71j.pages.dev> and the API at <https://gamepulse-api-xbkp.onrender.com>. Both run on free tiers, so the API sleeps when idle: the first request after a quiet period can take up to a minute. Create an account, add a game, and press **Run a quick demo** in the Simulator to watch it work.
