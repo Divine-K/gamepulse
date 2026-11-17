@@ -48,6 +48,8 @@ alembic revision --autogenerate -m "message"          # new migration
 cd frontend && npm install && npm run dev              # dashboard on :5173
 cd frontend && npm run lint && npm test && npm run build   # ESLint, Vitest, typecheck + build
 cd frontend && npm run e2e                                 # Playwright (isolated API on :8100, UI on :5174)
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build   # production stack on :8080
+python backend/scripts/smoke.py http://localhost:8080      # smoke test a running stack
 ```
 Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.md`.
 
@@ -55,7 +57,7 @@ Design docs: `docs/architecture.md`, `docs/database-schema.md`, `docs/api-guide.
 Everything must be free: open-source libraries, free tiers only, no paid APIs or subscriptions, no paid AI/LLM calls in the app. Before adopting any hosted service (especially for Phase 12 deployment), confirm it has a genuinely free tier and ask the user if it needs a card on file. Docker Desktop is free for personal use; GitHub Actions is free within limits.
 
 ## Current phase
-Phase 11 complete (QA). Next: Phase 12 (Docker, CI and deployment).
+Phase 12 built and verified except the live deployment, which needs the user to choose a free host (see docs/deployment.md). Next: choose a host, then Phase 13 (documentation and portfolio presentation).
 
 ## Completed milestones
 - Phase 1: Homebrew, Node, Git, gh, Python 3.13, Docker Desktop, VS Code installed; GitHub CLI authenticated; repo `Divine-K/gamepulse` (private); backend venv, Vite frontend, Postgres and Redis via Docker Compose.
@@ -76,6 +78,8 @@ Phase 11 complete (QA). Next: Phase 12 (Docker, CI and deployment).
 - Phase 10: restyle to the new visual direction (deep dark canvas, royal blue accent, grouped sidebar, filled active pill). Live event simulator: backend endpoints that act only on simulated players (`is_simulated` carried through sessions, events and real-time payloads), a cleanup that deletes only simulated rows of one game, and a dashboard page with step-by-step controls, a scripted demo and a live WebSocket feed. API playground: endpoint catalogue with real requests, session variables carried between responses, redacted key handling (memory only), status/timing/size/JSON viewer, curl/JavaScript/Python examples that never contain the key. 197 backend and 101 frontend tests.
 
 - Phase 11: Playwright end-to-end suite (21 tests, isolated API and database) covering the onboarding journey, live updates, tenant isolation, auth, simulator, playground, responsive layouts, axe accessibility in both themes and load-size budgets, with an automatic console/5xx gate; security review (`docs/security.md`) with request-size limits, security headers and token invalidation on password change; load and scale test (`docs/testing.md`); fixes for eager chart loading, sign-up redirect and WCAG contrast. 207 backend, 102 frontend and 21 end-to-end tests.
+
+- Phase 12: production Docker images (non-root API that migrates on start; nginx dashboard with strict CSP and same-origin API/WebSocket proxy), `docker-compose.prod.yml` (only the dashboard is published), stack smoke test, GitHub Actions CI (backend, frontend, e2e, Docker, audit) verified green on real runners, production refuses placeholder secrets, assets no longer inlined (CSP-safe), free-hosting research and `docs/deployment.md`. NOT done: the live deployment (needs the user's choice of host and account). 211 backend, 102 frontend and 21 end-to-end tests.
 
 ## Pending milestones
 8 Frontend foundation → 9 Dashboard → 10 API playground and simulator → 11 QA → 12 Docker/deploy → 13 Docs.

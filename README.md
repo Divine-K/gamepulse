@@ -1,5 +1,7 @@
 # GamePulse
 
+[![CI](https://github.com/Divine-K/gamepulse/actions/workflows/ci.yml/badge.svg)](https://github.com/Divine-K/gamepulse/actions/workflows/ci.yml)
+
 **Game Backend & Analytics Platform** — a multi-tenant backend that lets game developers plug their games into shared player management, session tracking, leaderboards, achievements, event ingestion and analytics, with a real-time developer dashboard.
 
 > Status: early development (Phase 1: environment and project setup).
@@ -40,4 +42,4 @@ uvicorn app.main:app --reload   # API on http://localhost:8000 (docs at /docs)
 cd ../frontend && npm install && npm run dev   # dashboard on http://localhost:5173
 ```
 
-Full setup instructions will be expanded as each phase lands. See `PROJECT.md` for the project handbook and roadmap.
+Run the production images locally with `docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build` (see `docs/deployment.md`). Testing is described in `docs/testing.md` and the security review in `docs/security.md`. See `PROJECT.md` for the project handbook and roadmap.
