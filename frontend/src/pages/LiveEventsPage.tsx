@@ -69,7 +69,9 @@ export function LiveEventsPage() {
               : paused
                 ? `Paused (${events.length - frozen.length} new)`
                 : status === 'live'
-                  ? 'Connected. Waiting for activity.'
+                  ? events.length > 0
+                    ? 'Connected. New events appear at the top.'
+                    : 'Connected. Waiting for activity.'
                   : status === 'reconnecting'
                     ? 'Reconnecting…'
                     : status === 'failed'
@@ -82,7 +84,7 @@ export function LiveEventsPage() {
           <EmptyState
             icon={Radio}
             title="No events yet"
-            description="Events appear here as your game sends players, sessions and scores to the API. Until the simulator ships, send requests with curl or the API docs."
+            description="Events appear here as your game sends players, sessions and scores to the API. Run the Simulator, use the API Playground, or connect your game with an API key."
           />
         ) : (
           <ul aria-label="Event feed" className="divide-y divide-line">

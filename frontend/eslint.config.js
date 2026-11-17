@@ -25,5 +25,10 @@ export default tseslint.config(
     rules: { 'react-hooks/rules-of-hooks': 'off' },
   },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: { ...globals.node } } },
+  {
+    // Node scripts; the screenshot script also runs a few callbacks inside the browser page.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
   prettier,
 )

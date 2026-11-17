@@ -4,7 +4,7 @@ GamePulse is verified at four levels. All of it runs locally with free tools.
 
 | Level | Tool | What it proves | Run it |
 |---|---|---|---|
-| Backend unit and integration | Pytest + HTTPX (async), real PostgreSQL and Redis | Every endpoint, auth, tenant isolation, concurrency, real WebSockets, migrations | `cd backend && pytest -q` |
+| Backend unit and integration | Pytest + HTTPX (async), real PostgreSQL and Redis | Every endpoint, auth, tenant isolation, concurrency, real WebSockets, migrations, and the example game in `examples/surfer` (run as a subprocess against a live server, so the documented integration cannot rot) | `cd backend && pytest -q` (213 tests) |
 | Frontend unit and component | Vitest + Testing Library | Pages, forms, accessibility semantics, API client, WebSocket client | `cd frontend && npm test` |
 | End to end | Playwright (installed Google Chrome) | Real browser against a real, isolated stack | `cd frontend && npm run e2e` |
 | Performance and scale | `backend/scripts/loadtest.py` | Throughput, latency and analytics query time at scale | see below |
