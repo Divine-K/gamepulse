@@ -64,7 +64,9 @@ class EventService:
         self.players = PlayerRepository(session)
         self.sessions = SessionRepository(session)
 
-    async def ingest(self, data: EventCreate, idempotency_key: str | None) -> tuple[Event, bool]:
+    async def ingest(
+        self, data: EventCreate, idempotency_key: str | None, *, force_simulated: bool = False
+    ) -> tuple[Event, bool]:
         """Validate and store an event. Returns (event, created); created=False on a replay."""
         payload = validate_event_type_and_payload(data)
         occurred_at = self._check_time(data.occurred_at)
@@ -77,13 +79,14 @@ class EventService:
                 raise AppError("player_not_found", "Player not found.", 404)
             player_id, simulated = player.id, player.is_simulated
 
+        simulated = simulated or force_simulated
         session_id = data.session_id
         if session_id is not None:
             game_session = await self.sessions.get(self.game_id, session_id)
             if game_session is None or (player_id and game_session.player_id != player_id):
                 raise AppError("session_not_found", "Session not found for this player.", 404)
             player_id = player_id or game_session.player_id
-            simulated = game_session.is_simulated
+            simulated = simulated or game_session.is_simulated
 
         if idempotency_key:
             replay = await self._replay(idempotency_key, data.event_type, player_id)

@@ -16,7 +16,12 @@ from app.websocket import events, tracker
 
 
 def player_dict(player: Player) -> dict[str, Any]:
-    return {"id": str(player.id), "external_id": player.external_id, "username": player.username}
+    return {
+        "id": str(player.id),
+        "external_id": player.external_id,
+        "username": player.username,
+        "is_simulated": player.is_simulated,
+    }
 
 
 def session_dict(game_session: GameSession) -> dict[str, Any]:

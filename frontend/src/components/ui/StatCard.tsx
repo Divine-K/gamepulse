@@ -44,8 +44,9 @@ export function StatCard({
   return (
     <Card>
       <CardBody>
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <Icon aria-hidden className="size-4" /> {label}
+        <div className="flex items-center justify-between gap-2 text-sm text-muted">
+          <span>{label}</span>
+          <Icon aria-hidden className="size-4 text-subtle" />
         </div>
         {loading ? (
           <Skeleton className="mt-3 h-9 w-24" />

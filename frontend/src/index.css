@@ -13,25 +13,25 @@
   color-scheme: dark;
 
   /* Surfaces, from the page background up to floating layers */
-  --bg: #0a0c10;
-  --surface: #10131a;
-  --raised: #161a23;
-  --overlay: #1c212c;
+  --bg: #07080b;
+  --surface: #0d0f14;
+  --raised: #141720;
+  --overlay: #1a1e28;
 
   /* Borders */
-  --line: #232938;
-  --line-strong: #323a4d;
+  --line: #1e2330;
+  --line-strong: #2d3444;
 
   /* Text */
   --fg: #e8ebf2;
   --muted: #9aa3b5;
   --subtle: #6b7488;
 
-  /* Brand accent ("pulse" mint) and a secondary for charts */
-  --accent: #3ee6c1;
-  --accent-fg: #04201a;
-  --accent-text: #3ee6c1;
-  --accent-soft: rgb(62 230 193 / 0.12);
+  /* Brand accent (royal blue) and a secondary for charts */
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-text: #6ea8fe;
+  --accent-soft: rgb(37 99 235 / 0.16);
   --violet: #8b7cf6;
 
   /* Data-viz categorical series (validated for CVD and contrast on the card surface) */
@@ -72,10 +72,10 @@
   --fg: #11141b;
   --muted: #4f5a70;
   --subtle: #758097;
-  --accent: #0fb894;
-  --accent-fg: #03241c;
-  --accent-text: #087a66;
-  --accent-soft: rgb(15 184 148 / 0.12);
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-text: #1d4ed8;
+  --accent-soft: rgb(37 99 235 / 0.1);
   --violet: #6d5ce0;
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -220,7 +220,7 @@ dialog.modal[open]::backdrop {
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent);
   }
   100% {
     box-shadow: 0 0 0 8px transparent;

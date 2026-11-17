@@ -39,6 +39,7 @@ class PlayerBrief(BaseModel):
     id: uuid.UUID
     external_id: str
     username: str
+    is_simulated: bool = False
 
 
 class PlayerOut(PlayerBrief):

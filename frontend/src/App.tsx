@@ -32,6 +32,12 @@ const AchievementsPage = lazy(() =>
 const AnalyticsPage = lazy(() =>
   import('./pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
 )
+const PlaygroundPage = lazy(() =>
+  import('./pages/PlaygroundPage').then((m) => ({ default: m.PlaygroundPage })),
+)
+const SimulatorPage = lazy(() =>
+  import('./pages/SimulatorPage').then((m) => ({ default: m.SimulatorPage })),
+)
 const LiveEventsPage = lazy(() =>
   import('./pages/LiveEventsPage').then((m) => ({ default: m.LiveEventsPage })),
 )
@@ -168,6 +174,22 @@ export default function App() {
               }
             />
             <Route
+              path="playground"
+              element={
+                <Page>
+                  <PlaygroundPage />
+                </Page>
+              }
+            />
+            <Route
+              path="simulator"
+              element={
+                <Page>
+                  <SimulatorPage />
+                </Page>
+              }
+            />
+            <Route
               path="live"
               element={
                 <Page>
@@ -191,7 +213,7 @@ export default function App() {
                 </Page>
               }
             />
-            {['playground', 'docs'].map((path) => (
+            {['docs'].map((path) => (
               <Route
                 key={path}
                 path={path}

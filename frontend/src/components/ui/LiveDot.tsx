@@ -7,7 +7,7 @@ export function LiveDot({ active, className }: { active: boolean; className?: st
       aria-hidden
       className={cn(
         'inline-block size-2 rounded-full',
-        active ? 'live-dot bg-accent' : 'bg-subtle',
+        active ? 'live-dot bg-success' : 'bg-subtle',
         className,
       )}
     />

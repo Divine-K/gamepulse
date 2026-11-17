@@ -6,6 +6,7 @@ import {
   Medal,
   Radio,
   Settings,
+  FlaskConical,
   Swords,
   TerminalSquare,
   Trophy,
@@ -13,7 +14,10 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
+export type NavGroup = 'Core' | 'Insights' | 'Developer' | 'System'
+
 export interface NavItem {
+  group: NavGroup
   to: string
   label: string
   icon: LucideIcon
@@ -24,6 +28,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   {
+    group: 'Core',
     to: '/',
     label: 'Overview',
     icon: LayoutDashboard,
@@ -31,6 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Live status of your game.',
   },
   {
+    group: 'Core',
     to: '/games',
     label: 'Games',
     icon: Gamepad2,
@@ -38,6 +44,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Register games and manage API keys.',
   },
   {
+    group: 'Core',
     to: '/players',
     label: 'Players',
     icon: Users,
@@ -45,6 +52,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Search players and open their profiles.',
   },
   {
+    group: 'Core',
     to: '/sessions',
     label: 'Sessions',
     icon: Swords,
@@ -52,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Active and completed game sessions.',
   },
   {
+    group: 'Core',
     to: '/leaderboards',
     label: 'Leaderboards',
     icon: Trophy,
@@ -59,6 +68,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Rankings by score, wins and achievements.',
   },
   {
+    group: 'Core',
     to: '/achievements',
     label: 'Achievements',
     icon: Medal,
@@ -66,6 +76,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Configure achievements and track unlocks.',
   },
   {
+    group: 'Insights',
     to: '/live',
     label: 'Live Events',
     icon: Radio,
@@ -73,6 +84,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Real-time feed of what your players are doing.',
   },
   {
+    group: 'Insights',
     to: '/analytics',
     label: 'Analytics',
     icon: LineChart,
@@ -80,13 +92,23 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Engagement trends, retention and score distributions.',
   },
   {
+    group: 'Developer',
     to: '/playground',
     label: 'API Playground',
     icon: TerminalSquare,
-    built: false,
+    built: true,
     description: 'Try the game API against the real backend.',
   },
   {
+    group: 'Developer',
+    to: '/simulator',
+    label: 'Simulator',
+    icon: FlaskConical,
+    built: true,
+    description: 'Simulate a game talking to GamePulse, with no game engine needed.',
+  },
+  {
+    group: 'Developer',
     to: '/docs',
     label: 'Documentation',
     icon: BookOpen,
@@ -94,6 +116,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Integration guides and API reference.',
   },
   {
+    group: 'System',
     to: '/settings',
     label: 'Settings',
     icon: Settings,

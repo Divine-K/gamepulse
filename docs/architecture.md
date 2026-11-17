@@ -165,3 +165,8 @@ flowchart TB
 - **Charts** follow the data-viz rules in the design system: a validated categorical palette (checked against both card surfaces), 2px lines with a 10% area wash, thin 4px-rounded columns, hairline grid, round y-axis ticks, crosshair/tooltip on hover, a legend for every multi-series chart, and a **Table** toggle on every chart so exact values never depend on colour or hover.
 - **Secrets.** API key secrets exist only in component state while the show-once dialog is open. Lists show only the key prefix. Destructive actions (revoke, rotate, delete game) always go through a confirmation dialog, and deleting a game requires typing its name.
 - **Performance.** Routes are lazy-loaded and third-party code is split into cached vendor chunks (charts, motion, forms, react), so the first load downloads about 45 kB of app code plus shared vendors, and the charting library only loads on pages that draw charts.
+
+## 10. Playground and simulator notes (Phase 10)
+
+- **Simulated data is a flag, not a separate store.** `is_simulated` on players, sessions and events flows through the real services, so the simulator exercises exactly the code paths a real game does (session rules, achievements, leaderboards, real-time pushes). Because it is just a flag, analytics can include or exclude it and one scoped `DELETE` removes it. A session inherits the flag from its player.
+- **The playground never keeps a secret.** The API key lives in memory only (lost on reload). It is redacted to its public prefix wherever it is displayed, and copy-ready examples use a placeholder (`$GAMEPULSE_KEY`), so a screenshot or a pasted example can't leak it. Requests go to the real backend, not a mock.

@@ -152,40 +152,69 @@ class AchievementEngine:
             evaluator = EVALUATORS[definition.condition_type]
             if not await evaluator(ctx, definition.threshold):
                 continue
-            inserted = await self.session.execute(
-                insert(PlayerAchievement)
-                .values(
-                    game_id=self.game_id,
-                    player_id=player_id,
-                    definition_id=definition.id,
-                    session_id=session_id,
-                )
-                .on_conflict_do_nothing(index_elements=["player_id", "definition_id"])
-                .returning(PlayerAchievement.id)
-            )
-            if inserted.first() is not None:  # False if a concurrent call awarded it first
+            if await self._award(definition, player_id, session_id, is_simulated):
                 unlocked.append(definition)
-                record_event(
-                    self.session,
-                    game_id=self.game_id,
-                    event_type="achievement_unlocked",
-                    player_id=player_id,
-                    session_id=session_id,
-                    payload={
-                        "achievement_id": str(definition.id),
-                        "key": definition.key,
-                        "name": definition.name,
-                    },
-                    is_simulated=is_simulated,
-                )
 
         if unlocked:
-            await self.session.execute(
-                update(PlayerStats)
-                .where(PlayerStats.player_id == player_id)
-                .values(achievements_count=PlayerStats.achievements_count + len(unlocked))
-            )
+            await self._count(player_id, len(unlocked))
         return unlocked
+
+    async def award(
+        self,
+        definition: AchievementDefinition,
+        player_id: uuid.UUID,
+        *,
+        session_id: uuid.UUID | None = None,
+        is_simulated: bool = False,
+    ) -> bool:
+        """Award one achievement without checking its condition (used by the simulator).
+        Returns False if the player already has it."""
+        awarded = await self._award(definition, player_id, session_id, is_simulated)
+        if awarded:
+            await self._count(player_id, 1)
+        return awarded
+
+    async def _count(self, player_id: uuid.UUID, amount: int) -> None:
+        await self.session.execute(
+            update(PlayerStats)
+            .where(PlayerStats.player_id == player_id)
+            .values(achievements_count=PlayerStats.achievements_count + amount)
+        )
+
+    async def _award(
+        self,
+        definition: AchievementDefinition,
+        player_id: uuid.UUID,
+        session_id: uuid.UUID | None,
+        is_simulated: bool,
+    ) -> bool:
+        inserted = await self.session.execute(
+            insert(PlayerAchievement)
+            .values(
+                game_id=self.game_id,
+                player_id=player_id,
+                definition_id=definition.id,
+                session_id=session_id,
+            )
+            .on_conflict_do_nothing(index_elements=["player_id", "definition_id"])
+            .returning(PlayerAchievement.id)
+        )
+        if inserted.first() is None:  # a concurrent call (or an earlier award) got there first
+            return False
+        record_event(
+            self.session,
+            game_id=self.game_id,
+            event_type="achievement_unlocked",
+            player_id=player_id,
+            session_id=session_id,
+            payload={
+                "achievement_id": str(definition.id),
+                "key": definition.key,
+                "name": definition.name,
+            },
+            is_simulated=is_simulated,
+        )
+        return True
 
 
 class AchievementService:

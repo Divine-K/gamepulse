@@ -18,6 +18,7 @@ from app.api import (
     leaderboards,
     players,
     realtime,
+    simulator,
 )
 from app.core.config import get_settings
 from app.core.database import dispose_engine, get_session_factory
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
         events.router,
         analytics.router,
         realtime.router,
+        simulator.router,
         game_api.router,
         admin.router,
     ):

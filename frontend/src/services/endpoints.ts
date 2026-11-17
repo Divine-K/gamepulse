@@ -14,6 +14,7 @@ import type {
   Page,
   Player,
   RetentionPoint,
+  SimSummary,
   ScoreDistribution,
   TokenResponse,
   Unlock,
@@ -133,4 +134,50 @@ export const analyticsApi = {
     api<ScoreDistribution>(`${game(gameId)}/analytics/scores${qs(query)}`, { signal }),
   achievements: (gameId: string, query: Query, signal?: AbortSignal) =>
     api<AchievementAnalytics>(`${game(gameId)}/analytics/achievements${qs(query)}`, { signal }),
+}
+
+const sim = (gameId: string) => `${game(gameId)}/simulator`
+
+/** The live event simulator. Everything it creates is flagged as simulated on the server. */
+export const simulatorApi = {
+  summary: (gameId: string, signal?: AbortSignal) =>
+    api<SimSummary>(`${sim(gameId)}/summary`, { signal }),
+  players: (gameId: string, signal?: AbortSignal) =>
+    api<Page<Player>>(`${sim(gameId)}/players`, { signal }),
+  createPlayer: (gameId: string, username?: string) =>
+    api<Player>(`${sim(gameId)}/players`, { method: 'POST', body: { username: username || null } }),
+  startSession: (gameId: string, playerId: string) =>
+    api<GameSessionRecord>(`${sim(gameId)}/sessions`, {
+      method: 'POST',
+      body: { player_id: playerId },
+    }),
+  sendScore: (gameId: string, sessionId: string, value: number) =>
+    api<{ value: number }>(`${sim(gameId)}/sessions/${sessionId}/score`, {
+      method: 'POST',
+      body: { value },
+    }),
+  endSession: (gameId: string, sessionId: string, body: { score?: number; result?: string }) =>
+    api<GameSessionRecord & { unlocked_achievements: { name: string }[] }>(
+      `${sim(gameId)}/sessions/${sessionId}/end`,
+      { method: 'POST', body },
+    ),
+  sendEvent: (
+    gameId: string,
+    body: {
+      event_type: string
+      player_id?: string
+      session_id?: string
+      payload: Record<string, unknown>
+    },
+  ) => api<{ id: string }>(`${sim(gameId)}/events`, { method: 'POST', body }),
+  award: (gameId: string, playerId: string, achievementId: string) =>
+    api<{ awarded: boolean; achievement_key: string }>(
+      `${sim(gameId)}/players/${playerId}/achievements`,
+      {
+        method: 'POST',
+        body: { achievement_id: achievementId },
+      },
+    ),
+  clear: (gameId: string) =>
+    api<{ deleted: SimSummary }>(`${sim(gameId)}/data`, { method: 'DELETE' }),
 }

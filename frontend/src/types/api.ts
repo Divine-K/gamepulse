@@ -60,6 +60,7 @@ export interface PlayerBrief {
   id: string
   external_id: string
   username: string
+  is_simulated?: boolean
 }
 
 export interface SessionPayload {
@@ -265,4 +266,10 @@ export interface AchievementAnalytics {
   }[]
   unlocks_by_day: { date: string; count: number }[]
   days: number
+}
+
+export interface SimSummary {
+  players: number
+  sessions: number
+  events: number
 }

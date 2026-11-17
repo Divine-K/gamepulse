@@ -112,3 +112,20 @@ Known types (payload validated): `player_registered`, `session_started`, `sessio
 All accept `include_simulated=false` to exclude simulator data. `GET /game/analytics/overview` exposes the overview to API-key callers.
 
 **Definitions.** *Active player*: a player with at least one event in the window. *Day-N retention*: of players registered at least N days ago, the share who have an event between N and N+1 days after registering. Score statistics use completed sessions only.
+
+## Simulator (dashboard, JWT)
+
+All under `/api/v1/games/{game_id}/simulator`. These drive a game exactly like an external client, but every row they create has `is_simulated = true`, shows a "Simulated" badge in the UI and is excluded by `include_simulated=false` on the analytics endpoints.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/summary` | Counts of simulated players, sessions and events |
+| GET, POST | `/players` | List or create test players (`sim_xxxxxxxx`) |
+| POST | `/sessions` | Start a session for a simulated player |
+| POST | `/sessions/{id}/score` | Live score update |
+| POST | `/sessions/{id}/end` | End a session (achievements are evaluated normally) |
+| POST | `/events` | Send a `custom_*` or `player_level_up` event, always flagged simulated |
+| POST | `/players/{id}/achievements` | Award an achievement without meeting its condition (idempotent) |
+| DELETE | `/data` | Delete all simulated data of this game |
+
+**Safety rules.** The simulator refuses (409 `not_simulated`) to act on real players, sessions or events, and `DELETE /data` removes only rows flagged simulated, scoped to one game. Both rules are covered by tests that fail if either filter is removed.

@@ -24,7 +24,9 @@ class PlayerService:
         self.game_id = game.id  # plain id: safe after a rollback expires ORM objects
         self.players = PlayerRepository(session)
 
-    async def register(self, data: PlayerCreate) -> tuple[Player, bool]:
+    async def register(
+        self, data: PlayerCreate, *, is_simulated: bool = False
+    ) -> tuple[Player, bool]:
         """Idempotent by external_id. Returns (player, created)."""
         existing = await self.players.get_by_external_id(self.game_id, data.external_id)
         if existing:
@@ -37,6 +39,7 @@ class PlayerService:
             external_id=data.external_id,
             username=data.username or data.external_id[:64],
             meta=data.metadata,
+            is_simulated=is_simulated,
         )
         stats = PlayerStats(player_id=player_id, game_id=self.game_id)
         self.players.add(player, stats)

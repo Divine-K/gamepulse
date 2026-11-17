@@ -93,7 +93,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           role="status"
           className={cn(
             'hidden items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex',
-            status === 'live' ? 'border-accent/40 text-accent-text' : 'border-line text-muted',
+            status === 'live' ? 'border-success/40 text-success' : 'border-line text-muted',
           )}
         >
           <LiveDot active={status === 'live'} />
