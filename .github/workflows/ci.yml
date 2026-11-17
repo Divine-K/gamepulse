@@ -197,4 +197,4 @@ jobs:
         run: |
           cd frontend
           npm ci
-          npm audit --audit-level=high
+          node ../.github/scripts/npm-audit.mjs

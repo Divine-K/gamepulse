@@ -26,7 +26,7 @@ Scope: the FastAPI backend, the React dashboard and their data stores, reviewed 
 
 ## Tooling results (free, local)
 
-- `npm audit`: **0 vulnerabilities**.
+- `npm audit`: **no unaccepted high or critical advisories.** One advisory is accepted on purpose: picomatch ≤ 4.0.7 (ReDoS in extglob matching, GHSA-fc5q-39xc-vjpf). No patched version exists, and it is reached only through build tooling that matches this repository's own file globs, never user input, and is not shipped to browsers. It is listed with its reason in `.github/scripts/npm-audit.mjs`, which CI runs; remove the exception when a fix is released.
 - `pip-audit -r requirements.txt`: **no known vulnerabilities**.
 - `bandit -r app` (medium severity and above): **no issues**.
 - `ruff`, `eslint` (with jsx-a11y), `tsc --strict`: clean.
