@@ -162,4 +162,4 @@ GitHub Actions runs all of this on every push, including a job that builds the D
 
 ## Author
 
-Built by Kushal Pokhrel ([@Divine-K](https://github.com/Divine-K)).
+Built by Khushal Pokharel ([@Divine-K](https://github.com/Divine-K)).
